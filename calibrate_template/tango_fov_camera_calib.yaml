@@ -1,0 +1,11 @@
+%YAML:1.0
+model_type: FOV
+camera_name: tango_fov
+image_width: 640
+image_height: 480
+projection_parameters:
+   fx: 255.944
+   fy: 256.394
+   u0: 317.557
+   v0: 234.345
+   omg: 0.925194
