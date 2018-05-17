@@ -121,6 +121,12 @@ Camera::Parameters::imageHeight( void ) const
     return m_imageHeight;
 }
 
+cv::Size
+Camera::Parameters::imageSize( ) const
+{
+    return cv::Size( imageWidth( ), imageHeight( ) );
+}
+
 int
 Camera::Parameters::nIntrinsics( void ) const
 {
@@ -298,9 +304,9 @@ Camera::projectPoints( const std::vector< cv::Point3f >& objectPoints,
     cv::Rodrigues( rvec, R0 );
 
     Eigen::MatrixXd R( 3, 3 );
-    R << R0.at< double >( 0, 0 ), R0.at< double >( 0, 1 ), R0.at< double >( 0, 2 ), R0.at< double >( 1, 0 ),
-    R0.at< double >( 1, 1 ), R0.at< double >( 1, 2 ), R0.at< double >( 2, 0 ), R0.at< double >( 2, 1 ),
-    R0.at< double >( 2, 2 );
+    R << R0.at< double >( 0, 0 ), R0.at< double >( 0, 1 ), R0.at< double >( 0, 2 ),
+    R0.at< double >( 1, 0 ), R0.at< double >( 1, 1 ), R0.at< double >( 1, 2 ),
+    R0.at< double >( 2, 0 ), R0.at< double >( 2, 1 ), R0.at< double >( 2, 2 );
 
     Eigen::Vector3d t;
     t << tvec.at< double >( 0 ), tvec.at< double >( 1 ), tvec.at< double >( 2 );
@@ -379,7 +385,9 @@ Ray::toSpace( ) const
 Eigen::Vector3d
 Ray::toSpace( double scale ) const
 {
-    return Eigen::Vector3d( sin( m_theta ) * cos( m_phi ) * scale, sin( m_theta ) * sin( m_phi ) * scale, cos( m_theta ) * scale );
+    return Eigen::Vector3d( sin( m_theta ) * cos( m_phi ) * scale,
+                            sin( m_theta ) * sin( m_phi ) * scale,
+                            cos( m_theta ) * scale );
 }
 
 void

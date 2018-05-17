@@ -69,6 +69,7 @@ class Camera
         const std::string& cameraName( void ) const;
         int imageWidth( void ) const;
         int imageHeight( void ) const;
+        cv::Size imageSize( void ) const;
 
         int nIntrinsics( void ) const;
 
@@ -87,6 +88,7 @@ class Camera
     virtual const std::string& cameraName( void ) const = 0;
     virtual int imageWidth( void ) const                = 0;
     virtual int imageHeight( void ) const               = 0;
+    virtual cv::Size imageSize( void ) const            = 0;
     virtual cv::Point2f getPrinciple( ) const           = 0;
 
     virtual cv::Mat& mask( void );

@@ -90,6 +90,7 @@ class PinholeCamera : public Camera
     const std::string& cameraName( void ) const;
     int imageWidth( void ) const;
     int imageHeight( void ) const;
+    cv::Size imageSize( ) const { return cv::Size( imageWidth( ), imageHeight( ) ); }
     cv::Point2f getPrinciple( ) const
     {
         return cv::Point2f( mParameters.cx( ), mParameters.cy( ) );

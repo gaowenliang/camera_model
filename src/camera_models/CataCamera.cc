@@ -28,8 +28,18 @@ CataCamera::Parameters::Parameters( )
 {
 }
 
-CataCamera::Parameters::Parameters(
-const std::string& cameraName, int w, int h, double xi, double k1, double k2, double p1, double p2, double gamma1, double gamma2, double u0, double v0 )
+CataCamera::Parameters::Parameters( const std::string& cameraName,
+                                    int w,
+                                    int h,
+                                    double xi,
+                                    double k1,
+                                    double k2,
+                                    double p1,
+                                    double p2,
+                                    double gamma1,
+                                    double gamma2,
+                                    double u0,
+                                    double v0 )
 : Camera::Parameters( MEI, cameraName, w, h )
 , m_xi( xi )
 , m_k1( k1 )
@@ -436,10 +446,14 @@ CataCamera::estimateIntrinsics( const cv::Size& boardSize,
 
             for ( size_t j = 0; j < objectPoints.size( ); ++j )
             {
-                estimateExtrinsics( objectPoints.at( j ), imagePoints.at( j ), rvecs.at( j ), tvecs.at( j ) );
+                estimateExtrinsics( objectPoints.at( j ),
+                                    imagePoints.at( j ),
+                                    rvecs.at( j ),
+                                    tvecs.at( j ) );
             }
 
-            double reprojErr = reprojectionError( objectPoints, imagePoints, rvecs, tvecs, cv::noArray( ) );
+            double reprojErr
+            = reprojectionError( objectPoints, imagePoints, rvecs, tvecs, cv::noArray( ) );
 
             if ( reprojErr < minReprojErr )
             {
@@ -496,15 +510,16 @@ CataCamera::liftSphere( const Eigen::Vector2d& p, Eigen::Vector3d& P ) const
 
             // Inverse distortion model
             // proposed by Heikkila
-            mx2_d       = mx_d * mx_d;
-            my2_d       = my_d * my_d;
-            mxy_d       = mx_d * my_d;
-            rho2_d      = mx2_d + my2_d;
-            rho4_d      = rho2_d * rho2_d;
-            radDist_d   = k1 * rho2_d + k2 * rho4_d;
-            Dx_d        = mx_d * radDist_d + p2 * ( rho2_d + 2 * mx2_d ) + 2 * p1 * mxy_d;
-            Dy_d        = my_d * radDist_d + p1 * ( rho2_d + 2 * my2_d ) + 2 * p2 * mxy_d;
-            inv_denom_d = 1 / ( 1 + 4 * k1 * rho2_d + 6 * k2 * rho4_d + 8 * p1 * my_d + 8 * p2 * mx_d );
+            mx2_d     = mx_d * mx_d;
+            my2_d     = my_d * my_d;
+            mxy_d     = mx_d * my_d;
+            rho2_d    = mx2_d + my2_d;
+            rho4_d    = rho2_d * rho2_d;
+            radDist_d = k1 * rho2_d + k2 * rho4_d;
+            Dx_d      = mx_d * radDist_d + p2 * ( rho2_d + 2 * mx2_d ) + 2 * p1 * mxy_d;
+            Dy_d      = my_d * radDist_d + p1 * ( rho2_d + 2 * my2_d ) + 2 * p2 * mxy_d;
+            inv_denom_d
+            = 1 / ( 1 + 4 * k1 * rho2_d + 6 * k2 * rho4_d + 8 * p1 * my_d + 8 * p2 * mx_d );
 
             mx_u = mx_d - inv_denom_d * Dx_d;
             my_u = my_d - inv_denom_d * Dy_d;
@@ -576,15 +591,16 @@ CataCamera::liftProjective( const Eigen::Vector2d& p, Eigen::Vector3d& P ) const
 
             // Apply inverse distortion model
             // proposed by Heikkila
-            mx2_d       = mx_d * mx_d;
-            my2_d       = my_d * my_d;
-            mxy_d       = mx_d * my_d;
-            rho2_d      = mx2_d + my2_d;
-            rho4_d      = rho2_d * rho2_d;
-            radDist_d   = k1 * rho2_d + k2 * rho4_d;
-            Dx_d        = mx_d * radDist_d + p2 * ( rho2_d + 2 * mx2_d ) + 2 * p1 * mxy_d;
-            Dy_d        = my_d * radDist_d + p1 * ( rho2_d + 2 * my2_d ) + 2 * p2 * mxy_d;
-            inv_denom_d = 1 / ( 1 + 4 * k1 * rho2_d + 6 * k2 * rho4_d + 8 * p1 * my_d + 8 * p2 * mx_d );
+            mx2_d     = mx_d * mx_d;
+            my2_d     = my_d * my_d;
+            mxy_d     = mx_d * my_d;
+            rho2_d    = mx2_d + my2_d;
+            rho4_d    = rho2_d * rho2_d;
+            radDist_d = k1 * rho2_d + k2 * rho4_d;
+            Dx_d      = mx_d * radDist_d + p2 * ( rho2_d + 2 * mx2_d ) + 2 * p1 * mxy_d;
+            Dy_d      = my_d * radDist_d + p1 * ( rho2_d + 2 * my2_d ) + 2 * p2 * mxy_d;
+            inv_denom_d
+            = 1 / ( 1 + 4 * k1 * rho2_d + 6 * k2 * rho4_d + 8 * p1 * my_d + 8 * p2 * mx_d );
 
             mx_u = mx_d - inv_denom_d * Dx_d;
             my_u = my_d - inv_denom_d * Dy_d;
@@ -618,7 +634,8 @@ CataCamera::liftProjective( const Eigen::Vector2d& p, Eigen::Vector3d& P ) const
     {
         // Reuse variable
         rho2_d = mx_u * mx_u + my_u * my_u;
-        P << mx_u, my_u, 1.0 - xi * ( rho2_d + 1.0 ) / ( xi + sqrt( 1.0 + ( 1.0 - xi * xi ) * rho2_d ) );
+        P << mx_u, my_u,
+        1.0 - xi * ( rho2_d + 1.0 ) / ( xi + sqrt( 1.0 + ( 1.0 - xi * xi ) * rho2_d ) );
     }
 }
 
@@ -657,7 +674,8 @@ CataCamera::spaceToPlane( const Eigen::Vector3d& P, Eigen::Vector2d& p ) const
     }
 
     // Apply generalised projection matrix
-    p << mParameters.gamma1( ) * p_d( 0 ) + mParameters.u0( ), mParameters.gamma2( ) * p_d( 1 ) + mParameters.v0( );
+    p << mParameters.gamma1( ) * p_d( 0 ) + mParameters.u0( ),
+    mParameters.gamma2( ) * p_d( 1 ) + mParameters.v0( );
 }
 
 void
@@ -762,7 +780,8 @@ CataCamera::undistToPlane( const Eigen::Vector2d& p_u, Eigen::Vector2d& p ) cons
     }
 
     // Apply generalised projection matrix
-    p << mParameters.gamma1( ) * p_d( 0 ) + mParameters.u0( ), mParameters.gamma2( ) * p_d( 1 ) + mParameters.v0( );
+    p << mParameters.gamma1( ) * p_d( 0 ) + mParameters.u0( ),
+    mParameters.gamma2( ) * p_d( 1 ) + mParameters.v0( );
 }
 
 /**
@@ -815,13 +834,13 @@ CataCamera::distortion( const Eigen::Vector2d& p_u, Eigen::Vector2d& d_u, Eigen:
     d_u << p_u( 0 ) * rad_dist_u + 2.0 * p1 * mxy_u + p2 * ( rho2_u + 2.0 * mx2_u ),
     p_u( 1 ) * rad_dist_u + 2.0 * p2 * mxy_u + p1 * ( rho2_u + 2.0 * my2_u );
 
-    double dxdmx
-    = 1.0 + rad_dist_u + k1 * 2.0 * mx2_u + k2 * rho2_u * 4.0 * mx2_u + 2.0 * p1 * p_u( 1 ) + 6.0 * p2 * p_u( 0 );
+    double dxdmx = 1.0 + rad_dist_u + k1 * 2.0 * mx2_u + k2 * rho2_u * 4.0 * mx2_u
+                   + 2.0 * p1 * p_u( 1 ) + 6.0 * p2 * p_u( 0 );
     double dydmx = k1 * 2.0 * p_u( 0 ) * p_u( 1 ) + k2 * 4.0 * rho2_u * p_u( 0 ) * p_u( 1 )
                    + p1 * 2.0 * p_u( 0 ) + 2.0 * p2 * p_u( 1 );
     double dxdmy = dydmx;
-    double dydmy
-    = 1.0 + rad_dist_u + k1 * 2.0 * my2_u + k2 * rho2_u * 4.0 * my2_u + 6.0 * p1 * p_u( 1 ) + 2.0 * p2 * p_u( 0 );
+    double dydmy = 1.0 + rad_dist_u + k1 * 2.0 * my2_u + k2 * rho2_u * 4.0 * my2_u
+                   + 6.0 * p1 * p_u( 1 ) + 2.0 * p2 * p_u( 0 );
 
     J << dxdmx, dxdmy, dydmx, dydmy;
 }
@@ -1001,5 +1020,11 @@ CataCamera::parametersToString( void ) const
     oss << mParameters;
 
     return oss.str( );
+}
+
+cv::Size
+CataCamera::imageSize( ) const
+{
+    return cv::Size( imageWidth( ), imageHeight( ) );
 }
 }

@@ -220,6 +220,7 @@ class PolyFisheyeCamera : public Camera
 
     int imageWidth( void ) const;
     int imageHeight( void ) const;
+    cv::Size imageSize( ) const { return cv::Size( imageWidth( ), imageHeight( ) ); }
     cv::Point2f getPrinciple( ) const
     {
         return cv::Point2f( mParameters.u0( ), mParameters.v0( ) );

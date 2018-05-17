@@ -190,8 +190,8 @@ EquidistantCamera::Parameters::writeToYamlFile( const std::string& filename ) co
     // projection: k2, k3, k4, k5, mu, mv, u0, v0
     fs << "projection_parameters";
     fs << "{"
-       << "k2" << m_k2 << "k3" << m_k3 << "k4" << m_k4 << "k5" << m_k5 << "mu" << m_mu << "mv" << m_mv << "u0"
-       << m_u0 << "v0" << m_v0 << "}";
+       << "k2" << m_k2 << "k3" << m_k3 << "k4" << m_k4 << "k5" << m_k5 << "mu" << m_mu
+       << "mv" << m_mv << "u0" << m_u0 << "v0" << m_v0 << "}";
 
     fs.release( );
 }
@@ -357,8 +357,8 @@ EquidistantCamera::estimateIntrinsics( const cv::Size& boardSize,
                 // find distance between pair of vanishing points which
                 // correspond to intersection points of 2 circles
                 std::vector< cv::Point2d > ipts;
-                ipts = intersectCircles( center[j]( 0 ), center[j]( 1 ), radius[j], center[k]( 0 ),
-                                         center[k]( 1 ), radius[k] );
+                ipts = intersectCircles(
+                center[j]( 0 ), center[j]( 1 ), radius[j], center[k]( 0 ), center[k]( 1 ), radius[k] );
 
                 if ( ipts.size( ) < 2 )
                 {
@@ -374,10 +374,14 @@ EquidistantCamera::estimateIntrinsics( const cv::Size& boardSize,
 
                 for ( size_t l = 0; l < objectPoints.size( ); ++l )
                 {
-                    estimateExtrinsics( objectPoints.at( l ), imagePoints.at( l ), rvecs.at( l ), tvecs.at( l ) );
+                    estimateExtrinsics( objectPoints.at( l ),
+                                        imagePoints.at( l ),
+                                        rvecs.at( l ),
+                                        tvecs.at( l ) );
                 }
 
-                double reprojErr = reprojectionError( objectPoints, imagePoints, rvecs, tvecs, cv::noArray( ) );
+                double reprojErr
+                = reprojectionError( objectPoints, imagePoints, rvecs, tvecs, cv::noArray( ) );
 
                 if ( reprojErr < minReprojErr )
                 {
@@ -455,11 +459,13 @@ EquidistantCamera::spaceToPlane( const Eigen::Vector3d& P, Eigen::Vector2d& p ) 
     double theta = acos( P( 2 ) / P.norm( ) );
     double phi   = atan2( P( 1 ), P( 0 ) );
 
-    Eigen::Vector2d p_u = r( mParameters.k2( ), mParameters.k3( ), mParameters.k4( ), mParameters.k5( ), theta )
-                          * Eigen::Vector2d( cos( phi ), sin( phi ) );
+    Eigen::Vector2d p_u
+    = r( mParameters.k2( ), mParameters.k3( ), mParameters.k4( ), mParameters.k5( ), theta )
+      * Eigen::Vector2d( cos( phi ), sin( phi ) );
 
     // Apply generalised projection matrix
-    p << mParameters.mu( ) * p_u( 0 ) + mParameters.u0( ), mParameters.mv( ) * p_u( 1 ) + mParameters.v0( );
+    p << mParameters.mu( ) * p_u( 0 ) + mParameters.u0( ),
+    mParameters.mv( ) * p_u( 1 ) + mParameters.v0( );
 }
 
 void
@@ -477,16 +483,20 @@ EquidistantCamera::spaceToPlane( const Eigen::Vector3d& P, Eigen::Vector2d& p, f
  * \param p return value, contains the image point coordinates
  */
 void
-EquidistantCamera::spaceToPlane( const Eigen::Vector3d& P, Eigen::Vector2d& p, Eigen::Matrix< double, 2, 3 >& J ) const
+EquidistantCamera::spaceToPlane( const Eigen::Vector3d& P,
+                                 Eigen::Vector2d& p,
+                                 Eigen::Matrix< double, 2, 3 >& J ) const
 {
     double theta = acos( P( 2 ) / P.norm( ) );
     double phi   = atan2( P( 1 ), P( 0 ) );
 
-    Eigen::Vector2d p_u = r( mParameters.k2( ), mParameters.k3( ), mParameters.k4( ), mParameters.k5( ), theta )
-                          * Eigen::Vector2d( cos( phi ), sin( phi ) );
+    Eigen::Vector2d p_u
+    = r( mParameters.k2( ), mParameters.k3( ), mParameters.k4( ), mParameters.k5( ), theta )
+      * Eigen::Vector2d( cos( phi ), sin( phi ) );
 
     // Apply generalised projection matrix
-    p << mParameters.mu( ) * p_u( 0 ) + mParameters.u0( ), mParameters.mv( ) * p_u( 1 ) + mParameters.v0( );
+    p << mParameters.mu( ) * p_u( 0 ) + mParameters.u0( ),
+    mParameters.mv( ) * p_u( 1 ) + mParameters.v0( );
 }
 
 /**
@@ -684,7 +694,10 @@ EquidistantCamera::parametersToString( void ) const
 }
 
 void
-EquidistantCamera::fitOddPoly( const std::vector< double >& x, const std::vector< double >& y, int n, std::vector< double >& coeffs ) const
+EquidistantCamera::fitOddPoly( const std::vector< double >& x,
+                               const std::vector< double >& y,
+                               int n,
+                               std::vector< double >& coeffs ) const
 {
     std::vector< int > pows;
     for ( int i = 1; i <= n; i += 2 )
@@ -814,5 +827,11 @@ EquidistantCamera::backprojectSymmetric( const Eigen::Vector2d& p_u, double& the
             theta = *std::min_element( thetas.begin( ), thetas.end( ) );
         }
     }
+}
+
+cv::Size
+EquidistantCamera::imageSize( ) const
+{
+    return cv::Size( imageWidth( ), imageHeight( ) );
 }
 }

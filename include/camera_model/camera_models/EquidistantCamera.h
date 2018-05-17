@@ -96,6 +96,8 @@ class EquidistantCamera : public Camera
     const std::string& cameraName( void ) const;
     int imageWidth( void ) const;
     int imageHeight( void ) const;
+    cv::Size imageSize( ) const;
+
     cv::Point2f getPrinciple( ) const
     {
         return cv::Point2f( mParameters.u0( ), mParameters.v0( ) );
