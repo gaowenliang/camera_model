@@ -5,18 +5,27 @@ cv_utils::fisheye::PreProcess::PreProcess( const cv::Size _raw_image_size,
                                            const cv::Point _center,
                                            const float _resize_scale )
 : is_preprocess( false )
+, is_resize_only( false )
 {
     /* clang-format off */
-    if (    _raw_image_size.width > _roi_size.width
-            && _raw_image_size.height > _roi_size.height
-            && _center.x < _raw_image_size.width
-            && _center.y < _raw_image_size.height
+    if (    _raw_image_size.width >= _roi_size.width
+            && _raw_image_size.height >= _roi_size.height
+            && _center.x <= _raw_image_size.width
+            && _center.y <= _raw_image_size.height
             && _roi_size.width != 0
             && _roi_size.height != 0 )
       is_preprocess = true;
     else
       is_preprocess = false;
     /* clang-format on */
+
+    if ( is_preprocess                               //
+         && _raw_image_size.width == _roi_size.width //
+         && _raw_image_size.height == _roi_size.height )
+    {
+        is_resize_only = true;
+        std::cout << "[#INFO] resize_only." << std::endl;
+    }
 
     if ( is_preprocess )
         resetPreProcess( _roi_size, _center, _resize_scale );
@@ -44,20 +53,31 @@ cv_utils::fisheye::PreProcess::resetPreProcess( cv::Size _roi_size, cv::Point _c
 cv::Mat
 cv_utils::fisheye::PreProcess::do_preprocess( cv::Mat image_input )
 {
-    if ( is_preprocess )
+    if ( is_resize_only )
+    {
+        cv::Mat image_input_resized;
+        cv::resize( image_input,
+                    image_input_resized,
+                    cv::Size( image_input.cols * resize_scale, //
+                              image_input.rows * resize_scale ) );
+        return image_input_resized;
+    }
+    else if ( is_preprocess )
     {
         //        std::cout << " is_preprocess true " << std::endl;
         cv::Mat image_input_roi = image_input( cv::Range( roi_row_start, roi_row_end ),
                                                cv::Range( roi_col_start, roi_col_end ) );
 
         cv::Mat image_input_resized;
-        cv::resize( image_input_roi, image_input_resized,
-                    cv::Size( image_input_roi.cols * resize_scale, image_input_roi.rows * resize_scale ) );
+        cv::resize( image_input_roi,
+                    image_input_resized,
+                    cv::Size( image_input_roi.cols * resize_scale, //
+                              image_input_roi.rows * resize_scale ) );
         return image_input_resized;
     }
     else
     {
-        //        std::cout << " is_preprocess false " << std::endl;
+        std::cout << " is_preprocess false " << std::endl;
         return image_input;
     }
 }

@@ -76,8 +76,11 @@ main( int argc, char** argv )
     pdesc.add( "input", 1 );
 
     boost::program_options::variables_map vm;
-    boost::program_options::store(
-    boost::program_options::command_line_parser( argc, argv ).options( desc ).positional( pdesc ).run( ), vm );
+    boost::program_options::store( boost::program_options::command_line_parser( argc, argv )
+                                   .options( desc )
+                                   .positional( pdesc )
+                                   .run( ),
+                                   vm );
     boost::program_options::notify( vm );
 
     if ( vm.count( "help" ) )
@@ -155,7 +158,9 @@ main( int argc, char** argv )
     // look for images in input directory
     std::vector< std::string > imageFilenames;
     boost::filesystem::directory_iterator itr;
-    for ( boost::filesystem::directory_iterator itr( inputDir ); itr != boost::filesystem::directory_iterator( ); ++itr )
+    for ( boost::filesystem::directory_iterator itr( inputDir );
+          itr != boost::filesystem::directory_iterator( );
+          ++itr )
     {
         if ( !boost::filesystem::is_regular_file( itr->status( ) ) )
         {
@@ -174,7 +179,8 @@ main( int argc, char** argv )
         }
 
         // check if file extension matches
-        if ( filename.compare( filename.length( ) - fileExtension.length( ), fileExtension.length( ), fileExtension ) != 0 )
+        if ( filename.compare( filename.length( ) - fileExtension.length( ), fileExtension.length( ), fileExtension )
+             != 0 )
         {
             continue;
         }
@@ -203,9 +209,14 @@ main( int argc, char** argv )
     {
         cv::Mat image_src = cv::imread( imageFilenames.front( ), -1 );
 
-        preprocess
-        = new cv_utils::fisheye::PreProcess( cv::Size( image_src.cols, image_src.rows ), cropper_size, cropper_center, resize_scale );
-        frameSize = image_src.size( );
+        preprocess    = new cv_utils::fisheye::PreProcess( cv::Size( image_src.cols, //
+                                                                  image_src.rows ),
+                                                        cropper_size,
+                                                        cropper_center,
+                                                        resize_scale );
+        cv::Mat image = preprocess->do_preprocess( image_src );
+        frameSize     = image.size( );
+        std::cout << "frameSize " << frameSize << "\n";
     }
 
     double startTime_0 = camera_model::timeInSeconds( );
@@ -241,8 +252,8 @@ main( int argc, char** argv )
         else
         {
             std::cout << "\033[31;47;1m"
-                      << "# INFO: Did not detect chessboard in image: " << imageFilenames.at( image_index )
-                      << "\033[0m" << std::endl;
+                      << "# INFO: Did not detect chessboard in image: "
+                      << imageFilenames.at( image_index ) << "\033[0m" << std::endl;
         }
         chessboardFound.at( image_index ) = chessboard.cornersFound( );
     }
@@ -265,8 +276,9 @@ main( int argc, char** argv )
     calibration.writeParams( cameraName + "_camera_calib.yaml" );
     //    calibration.writeChessboardData( cameraName + "_chessboard_data.dat" );
 
-    std::cout << "# INFO: Calibration took a total time of " << std::fixed << std::setprecision( 3 )
-              << camera_model::timeInSeconds( ) - startTime_0 << " sec, core calibration cost "
+    std::cout << "# INFO: Calibration took a total time of " << std::fixed
+              << std::setprecision( 3 ) << camera_model::timeInSeconds( ) - startTime_0
+              << " sec, core calibration cost "
               << camera_model::timeInSeconds( ) - startTime << " sec." << std::endl;
 
     std::cerr << "# INFO: Wrote calibration file to " << cameraName + "_camera_calib.yaml" << std::endl;
@@ -275,7 +287,8 @@ main( int argc, char** argv )
     {
 
         std::cout << "\033[32;40;1m"
-                  << "# INFO: Used image num: " << calibration.m_ImagesShow.size( ) << "\033[0m" << std::endl;
+                  << "# INFO: Used image num: " << calibration.m_ImagesShow.size( )
+                  << "\033[0m" << std::endl;
         std::cout << "details shown in the images,"
                   << "\033[32;40;1m"
                   << "green points is observed points, "
@@ -283,14 +296,20 @@ main( int argc, char** argv )
                   << "red points is estimated points. "
                   << "\033[0m" << std::endl;
 
-        cv::Mat pointDistributedImage
-        = cv::Mat( calibration.m_ImagesShow[0].rows, calibration.m_ImagesShow[0].cols, CV_8UC3, cv::Scalar( 0 ) );
-        cv::Mat pointDistributedImageGood
-        = cv::Mat( calibration.m_ImagesShow[0].rows, calibration.m_ImagesShow[0].cols, CV_8UC3, cv::Scalar( 0 ) );
+        cv::Mat pointDistributedImage     = cv::Mat( calibration.m_ImagesShow[0].rows,
+                                                 calibration.m_ImagesShow[0].cols,
+                                                 CV_8UC3,
+                                                 cv::Scalar( 0 ) );
+        cv::Mat pointDistributedImageGood = cv::Mat( calibration.m_ImagesShow[0].rows,
+                                                     calibration.m_ImagesShow[0].cols,
+                                                     CV_8UC3,
+                                                     cv::Scalar( 0 ) );
 
         // visualize observed and reprojected points
         calibration.drawResultsInitial( calibration.m_ImagesShow, calibration.m_ImageNames, pointDistributedImage );
-        calibration.drawResultsFiltered( calibration.m_ImagesGoodShow, calibration.m_ImageNames, pointDistributedImageGood );
+        calibration.drawResultsFiltered( calibration.m_ImagesGoodShow,
+                                         calibration.m_ImageNames,
+                                         pointDistributedImageGood );
 
         cv::namedWindow( "point Distributed Image", cv::WINDOW_NORMAL );
         cv::imshow( "point Distributed Image", pointDistributedImage );
@@ -307,7 +326,8 @@ main( int argc, char** argv )
             {
                 std::ostringstream ss;
                 ss << i;
-                cv::imwrite( result_images_save_folder + "calib_result_" + ss.str( ) + ".jpg",
+                cv::imwrite( result_images_save_folder + "calib_result_" + ss.str( )
+                             + ".jpg",
                              calibration.m_ImagesGoodShow.at( i ) );
             }
             cv::waitKey( 0 );
