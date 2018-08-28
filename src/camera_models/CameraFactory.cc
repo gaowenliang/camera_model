@@ -160,6 +160,10 @@ CameraFactory::generateCameraFromYamlFile( const std::string& filename )
         {
             modelType = Camera::PINHOLE;
         }
+        else if ( boost::iequals( sModelType, "PINHOLE_FULL" ) )
+        {
+            modelType = Camera::PINHOLE_FULL;
+        }
         else if ( boost::iequals( sModelType, "POLYFISHEYE" ) )
         {
             modelType = Camera::POLYFISHEYE;
@@ -195,6 +199,15 @@ CameraFactory::generateCameraFromYamlFile( const std::string& filename )
             PinholeCameraPtr camera( new PinholeCamera );
 
             PinholeCamera::Parameters params = camera->getParameters( );
+            params.readFromYamlFile( filename );
+            camera->setParameters( params );
+            return camera;
+        }
+        case Camera::PINHOLE_FULL:
+        {
+            PinholeFullCameraPtr camera( new PinholeFullCamera );
+
+            PinholeFullCamera::Parameters params = camera->getParameters( );
             params.readFromYamlFile( filename );
             camera->setParameters( params );
             return camera;

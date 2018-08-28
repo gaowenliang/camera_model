@@ -65,12 +65,12 @@ add_executable(Calibration
     ${CAMERA_MODEL_FILES}
     )
 
-#add_executable(Test
-#    src/test_calib.cc
-#    src/chessboard/Chessboard.cc
-#    src/calib/CameraCalibrationTest.cc
-#    ${CAMERA_MODEL_FILES}
-#    )
+ add_executable(Test
+     src/test_calib.cc
+     src/chessboard/Chessboard.cc
+     src/calib/CameraCalibrationTest.cc
+     ${CAMERA_MODEL_FILES}
+     )
 
 add_library(camera_model STATIC
     src/chessboard/Chessboard.cc
@@ -83,11 +83,11 @@ target_link_libraries(Calibration
     ${OpenCV_LIBS}
     ${CERES_LIBRARIES}
      dw    )
-# target_link_libraries(Test
-#     ${Boost_LIBRARIES}
-#     ${OpenCV_LIBS}
-#     ${CERES_LIBRARIES}
-#      dw    )
+target_link_libraries(Test
+    ${Boost_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${CERES_LIBRARIES}
+     dw    )
 target_link_libraries(camera_model
     ${Boost_LIBRARIES}
     ${OpenCV_LIBS}

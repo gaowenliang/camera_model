@@ -30,12 +30,12 @@ Chessboard::Chessboard( cv::Size boardSize, cv::Mat& image )
 void
 Chessboard::findCorners( bool useOpenCV )
 {
-    mCornersFound
-    = findChessboardCorners( mImage,
-                             mBoardSize,
-                             mCorners,
-                             CV_CALIB_CB_ADAPTIVE_THRESH + CV_CALIB_CB_NORMALIZE_IMAGE + CV_CALIB_CB_FILTER_QUADS + CV_CALIB_CB_FAST_CHECK,
-                             useOpenCV );
+    mCornersFound = findChessboardCorners( mImage,
+                                           mBoardSize,
+                                           mCorners,
+                                           CV_CALIB_CB_ADAPTIVE_THRESH + CV_CALIB_CB_NORMALIZE_IMAGE
+                                           + CV_CALIB_CB_FILTER_QUADS + CV_CALIB_CB_FAST_CHECK,
+                                           useOpenCV );
 
     if ( mCornersFound )
     {
@@ -69,7 +69,11 @@ Chessboard::getSketch( void ) const
 }
 
 bool
-Chessboard::findChessboardCorners( const cv::Mat& image, const cv::Size& patternSize, std::vector< cv::Point2f >& corners, int flags, bool useOpenCV )
+Chessboard::findChessboardCorners( const cv::Mat& image,
+                                   const cv::Size& patternSize,
+                                   std::vector< cv::Point2f >& corners,
+                                   int flags,
+                                   bool useOpenCV )
 {
     if ( useOpenCV )
     {
@@ -88,7 +92,10 @@ Chessboard::findChessboardCorners( const cv::Mat& image, const cv::Size& pattern
 }
 
 bool
-Chessboard::findChessboardCornersImproved( const cv::Mat& image, const cv::Size& patternSize, std::vector< cv::Point2f >& corners, int flags )
+Chessboard::findChessboardCornersImproved( const cv::Mat& image,
+                                           const cv::Size& patternSize,
+                                           std::vector< cv::Point2f >& corners,
+                                           int flags )
 {
     /************************************************************************************\
         This is improved variant of chessboard corner detection algorithm that
@@ -185,11 +192,14 @@ Chessboard::findChessboardCornersImproved( const cv::Mat& image, const cv::Size&
             // convert the input grayscale image to binary (black-n-white)
             if ( flags & CV_CALIB_CB_ADAPTIVE_THRESH )
             {
-                int blockSize
-                = lround( prevSqrSize == 0 ? std::min( img.cols, img.rows ) * ( k % 2 == 0 ? 0.2 : 0.1 ) : prevSqrSize * 2 ) | 1;
+                int blockSize = lround( prevSqrSize == 0 ?
+                                        std::min( img.cols, img.rows ) * ( k % 2 == 0 ? 0.2 : 0.1 ) :
+                                        prevSqrSize * 2 )
+                                | 1;
 
                 // convert to binary
-                cv::adaptiveThreshold( img, thresh_img, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, blockSize, ( k / 2 ) * 5 );
+                cv::adaptiveThreshold(
+                img, thresh_img, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, blockSize, ( k / 2 ) * 5 );
             }
             else
             {
@@ -206,8 +216,10 @@ Chessboard::findChessboardCornersImproved( const cv::Mat& image, const cv::Size&
             // homogeneous dilation is performed, which is crucial for small,
             // distorted checkers. Use the CROSS kernel first, since its action
             // on the image is more subtle
-            cv::Mat kernel1 = cv::getStructuringElement( CV_SHAPE_CROSS, cv::Size( 3, 3 ), cv::Point( 1, 1 ) );
-            cv::Mat kernel2 = cv::getStructuringElement( CV_SHAPE_RECT, cv::Size( 3, 3 ), cv::Point( 1, 1 ) );
+            cv::Mat kernel1
+            = cv::getStructuringElement( CV_SHAPE_CROSS, cv::Size( 3, 3 ), cv::Point( 1, 1 ) );
+            cv::Mat kernel2
+            = cv::getStructuringElement( CV_SHAPE_RECT, cv::Size( 3, 3 ), cv::Point( 1, 1 ) );
 
             if ( dilations >= 1 )
                 cv::dilate( thresh_img, thresh_img, kernel1 );
@@ -226,7 +238,12 @@ Chessboard::findChessboardCornersImproved( const cv::Mat& image, const cv::Size&
             // line around the image edge. Otherwise FindContours will miss those
             // clipped rectangle contours. The border color will be the image mean,
             // because otherwise we risk screwing up filters like cvSmooth()
-            cv::rectangle( thresh_img, cv::Point( 0, 0 ), cv::Point( thresh_img.cols - 1, thresh_img.rows - 1 ), CV_RGB( 255, 255, 255 ), 3, 8 );
+            cv::rectangle( thresh_img,
+                           cv::Point( 0, 0 ),
+                           cv::Point( thresh_img.cols - 1, thresh_img.rows - 1 ),
+                           CV_RGB( 255, 255, 255 ),
+                           3,
+                           8 );
 
             // Generate quadrangles in the following function
             std::vector< ChessboardQuadPtr > quads;
@@ -278,7 +295,7 @@ Chessboard::findChessboardCornersImproved( const cv::Mat& image, const cv::Size&
                 float sumDist = 0;
                 int total     = 0;
 
-                for ( int i = 0; i < outputCorners.size( ); ++i )
+                for ( int i = 0; i < int( outputCorners.size( ) ); ++i )
                 {
                     int ni     = 0;
                     float avgi = outputCorners.at( i )->meanDist( ni );
@@ -308,7 +325,11 @@ Chessboard::findChessboardCornersImproved( const cv::Mat& image, const cv::Size&
             corners.push_back( outputCorners.at( i )->pt );
         }
 
-        cv::cornerSubPix( image, corners, cv::Size( 11, 11 ), cv::Size( -1, -1 ), cv::TermCriteria( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1 ) );
+        cv::cornerSubPix( image,
+                          corners,
+                          cv::Size( 11, 11 ),
+                          cv::Size( -1, -1 ),
+                          cv::TermCriteria( CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1 ) );
 
         return true;
     }
@@ -429,7 +450,10 @@ Chessboard::cleanFoundConnectedQuads( std::vector< ChessboardQuadPtr >& quadGrou
 // FIND COONECTED QUADS
 //===========================================================================
 void
-Chessboard::findConnectedQuads( std::vector< ChessboardQuadPtr >& quads, std::vector< ChessboardQuadPtr >& group, int group_idx, int dilation )
+Chessboard::findConnectedQuads( std::vector< ChessboardQuadPtr >& quads,
+                                std::vector< ChessboardQuadPtr >& group,
+                                int group_idx,
+                                int dilation )
 {
     ChessboardQuadPtr q;
 
@@ -570,19 +594,27 @@ Chessboard::labelQuadGroup( std::vector< ChessboardQuadPtr >& quadGroup, cv::Siz
                             // and column of the connected neighbor corner and
                             // all other corners of the connected quad "j",
                             // clockwise (CW)
-                            ChessboardCornerPtr& conCorner = quadNeighbor->corners[connectedNeighborCornerId];
-                            ChessboardCornerPtr& conCornerCW1 = quadNeighbor->corners[( connectedNeighborCornerId + 1 ) % 4];
-                            ChessboardCornerPtr& conCornerCW2 = quadNeighbor->corners[( connectedNeighborCornerId + 2 ) % 4];
-                            ChessboardCornerPtr& conCornerCW3 = quadNeighbor->corners[( connectedNeighborCornerId + 3 ) % 4];
+                            ChessboardCornerPtr& conCorner
+                            = quadNeighbor->corners[connectedNeighborCornerId];
+                            ChessboardCornerPtr& conCornerCW1
+                            = quadNeighbor->corners[( connectedNeighborCornerId + 1 ) % 4];
+                            ChessboardCornerPtr& conCornerCW2
+                            = quadNeighbor->corners[( connectedNeighborCornerId + 2 ) % 4];
+                            ChessboardCornerPtr& conCornerCW3
+                            = quadNeighbor->corners[( connectedNeighborCornerId + 3 ) % 4];
 
-                            quad->corners[j]->row             = conCorner->row;
-                            quad->corners[j]->column          = conCorner->column;
-                            quad->corners[( j + 1 ) % 4]->row = conCorner->row - conCornerCW2->row + conCornerCW3->row;
+                            quad->corners[j]->row    = conCorner->row;
+                            quad->corners[j]->column = conCorner->column;
+                            quad->corners[( j + 1 ) % 4]->row
+                            = conCorner->row - conCornerCW2->row + conCornerCW3->row;
                             quad->corners[( j + 1 ) % 4]->column
                             = conCorner->column - conCornerCW2->column + conCornerCW3->column;
-                            quad->corners[( j + 2 ) % 4]->row = conCorner->row + conCorner->row - conCornerCW2->row;
-                            quad->corners[( j + 2 ) % 4]->column = conCorner->column + conCorner->column - conCornerCW2->column;
-                            quad->corners[( j + 3 ) % 4]->row = conCorner->row - conCornerCW2->row + conCornerCW1->row;
+                            quad->corners[( j + 2 ) % 4]->row
+                            = conCorner->row + conCorner->row - conCornerCW2->row;
+                            quad->corners[( j + 2 ) % 4]->column
+                            = conCorner->column + conCorner->column - conCornerCW2->column;
+                            quad->corners[( j + 3 ) % 4]->row
+                            = conCorner->row - conCornerCW2->row + conCornerCW1->row;
                             quad->corners[( j + 3 ) % 4]->column
                             = conCorner->column - conCornerCW2->column + conCornerCW1->column;
 
@@ -723,7 +755,8 @@ Chessboard::labelQuadGroup( std::vector< ChessboardQuadPtr >& quadGroup, cv::Siz
                             // Second corner, check wheter this and the
                             // first one have equal coordinates, else
                             // interpolate
-                            cv::Point2f delta = q->corners[l]->pt - quadGroup[quadID]->corners[cornerID]->pt;
+                            cv::Point2f delta
+                            = q->corners[l]->pt - quadGroup[quadID]->corners[cornerID]->pt;
 
                             if ( delta.x != 0.0f || delta.y != 0.0f )
                             {
@@ -861,7 +894,8 @@ Chessboard::labelQuadGroup( std::vector< ChessboardQuadPtr >& quadGroup, cv::Siz
         }
     }
 
-    if ( ( flagSmallerDim1 == false && flagSmallerDim2 == false ) && smallerDimPattern + 1 < max_column - min_column )
+    if ( ( flagSmallerDim1 == false && flagSmallerDim2 == false )
+         && smallerDimPattern + 1 < max_column - min_column )
     {
         // Larger target pattern size is in column direction, check wheter smaller target
         // pattern size is reached in row direction
@@ -921,9 +955,9 @@ Chessboard::findQuadNeighbors( std::vector< ChessboardQuadPtr >& quads, int dila
     // computed as its square, we do here the same. Additionally, we take the
     // conservative assumption that dilation was performed using the 3x3 CROSS
     // kernel, which coresponds to the 4-neighborhood.
-    const float thresh_dilation
-    = ( float )( 2 * dilation + 3 ) * ( 2 * dilation + 3 ) * 2; // the "*2" is for the x and y component
-                                                                // the "3" is for initial corner mismatch
+    const float thresh_dilation = ( float )( 2 * dilation + 3 ) * ( 2 * dilation + 3 )
+                                  * 2; // the "*2" is for the x and y component
+                                       // the "3" is for initial corner mismatch
 
     // Find quad neighbors
     for ( size_t idx = 0; idx < quads.size( ); ++idx )
@@ -969,7 +1003,8 @@ Chessboard::findQuadNeighbors( std::vector< ChessboardQuadPtr >& quads, int dila
                     // The following "if" checks, whether "dist" is the
                     // shortest so far and smaller than the smallest
                     // edge length of the current and target quads
-                    if ( dist < minDist && dist <= ( curQuad->edge_len + thresh_dilation ) && dist <= ( quad->edge_len + thresh_dilation ) )
+                    if ( dist < minDist && dist <= ( curQuad->edge_len + thresh_dilation )
+                         && dist <= ( quad->edge_len + thresh_dilation ) )
                     {
                         // Check whether conditions are fulfilled
                         if ( matchCorners( curQuad, i, quad, j ) )
@@ -1036,8 +1071,8 @@ Chessboard::augmentBestRun( std::vector< ChessboardQuadPtr >& candidateQuads,
     // computed as its square, we do here the same. Additionally, we take the
     // conservative assumption that dilation was performed using the 3x3 CROSS
     // kernel, which coresponds to the 4-neighborhood.
-    const float thresh_dilation
-    = ( 2 * candidateDilation + 3 ) * ( 2 * existingDilation + 3 ) * 2; // the "*2" is for the x and y component
+    const float thresh_dilation = ( 2 * candidateDilation + 3 ) * ( 2 * existingDilation + 3 )
+                                  * 2; // the "*2" is for the x and y component
 
     // Search all old quads which have a neighbor that needs to be linked
     for ( size_t idx = 0; idx < existingQuads.size( ); ++idx )
@@ -1218,7 +1253,8 @@ Chessboard::generateQuads( std::vector< ChessboardQuadPtr >& quads, cv::Mat& ima
             double d4 = sqrt( dp.dot( dp ) );
 
             if ( !( flags & CV_CALIB_CB_FILTER_QUADS )
-                 || ( d3 * 4 > d4 && d4 * 4 > d3 && d3 * d4 < area * 1.5 && area > minSize && d1 >= 0.15 * p && d2 >= 0.15 * p ) )
+                 || ( d3 * 4 > d4 && d4 * 4 > d3 && d3 * d4 < area * 1.5 && area > minSize
+                      && d1 >= 0.15 * p && d2 >= 0.15 * p ) )
             {
                 quadContours.push_back( approxContour );
             }
@@ -1259,7 +1295,9 @@ Chessboard::generateQuads( std::vector< ChessboardQuadPtr >& quads, cv::Mat& ima
 }
 
 bool
-Chessboard::checkQuadGroup( std::vector< ChessboardQuadPtr >& quads, std::vector< ChessboardCornerPtr >& corners, cv::Size patternSize )
+Chessboard::checkQuadGroup( std::vector< ChessboardQuadPtr >& quads,
+                            std::vector< ChessboardCornerPtr >& corners,
+                            cv::Size patternSize )
 {
     // Initialize
     bool flagRow    = false;
@@ -1430,7 +1468,8 @@ Chessboard::checkQuadGroup( std::vector< ChessboardQuadPtr >& quads, std::vector
     {
         ChessboardCornerPtr& c = corners.at( i );
 
-        if ( c->pt.x < border || c->pt.x > mImage.cols - border || c->pt.y < border || c->pt.y > mImage.rows - border )
+        if ( c->pt.x < border || c->pt.x > mImage.cols - border || c->pt.y < border
+             || c->pt.y > mImage.rows - border )
         {
             return false;
         }
@@ -1484,7 +1523,8 @@ Chessboard::checkQuadGroup( std::vector< ChessboardQuadPtr >& quads, std::vector
         {
             for ( int j = 0; j < width; ++j )
             {
-                outputCorners.at( i * width + j ) = corners.at( ( height - i - 1 ) * width + width - j - 1 );
+                outputCorners.at( i * width + j )
+                = corners.at( ( height - i - 1 ) * width + width - j - 1 );
             }
         }
 
@@ -1530,7 +1570,10 @@ less_pred( const std::pair< float, int >& p1, const std::pair< float, int >& p2 
 }
 
 void
-countClasses( const std::vector< std::pair< float, int > >& pairs, size_t idx1, size_t idx2, std::vector< int >& counts )
+countClasses( const std::vector< std::pair< float, int > >& pairs,
+              size_t idx1,
+              size_t idx2,
+              std::vector< int >& counts )
 {
     counts.assign( 2, 0 );
     for ( size_t i = idx1; i != idx2; ++i )
@@ -1597,8 +1640,10 @@ Chessboard::checkChessboard( const cv::Mat& image, cv::Size patternSize ) const
                 // check the number of black and white squares
                 std::vector< int > counts;
                 countClasses( quads, i, j, counts );
-                const int blackCount = lroundf( ceilf( patternSize.width / 2.0f ) * ceilf( patternSize.height / 2.0f ) );
-                const int whiteCount = lroundf( floorf( patternSize.width / 2.0f ) * floorf( patternSize.height / 2.0f ) );
+                const int blackCount
+                = lroundf( ceilf( patternSize.width / 2.0f ) * ceilf( patternSize.height / 2.0f ) );
+                const int whiteCount
+                = lroundf( floorf( patternSize.width / 2.0f ) * floorf( patternSize.height / 2.0f ) );
                 if ( counts[0] < blackCount * 0.75f || counts[1] < whiteCount * 0.75f )
                 {
                     continue;
@@ -1744,13 +1789,17 @@ Chessboard::matchCorners( ChessboardQuadPtr& quad1, int corner1, ChessboardQuadP
     // sides 1
     float x1 = ( quad1->corners[corner1]->pt.x + quad1->corners[( corner1 + 1 ) % 4]->pt.x ) / 2;
     float y1 = ( quad1->corners[corner1]->pt.y + quad1->corners[( corner1 + 1 ) % 4]->pt.y ) / 2;
-    float x2 = ( quad1->corners[( corner1 + 2 ) % 4]->pt.x + quad1->corners[( corner1 + 3 ) % 4]->pt.x ) / 2;
-    float y2 = ( quad1->corners[( corner1 + 2 ) % 4]->pt.y + quad1->corners[( corner1 + 3 ) % 4]->pt.y ) / 2;
+    float x2
+    = ( quad1->corners[( corner1 + 2 ) % 4]->pt.x + quad1->corners[( corner1 + 3 ) % 4]->pt.x ) / 2;
+    float y2
+    = ( quad1->corners[( corner1 + 2 ) % 4]->pt.y + quad1->corners[( corner1 + 3 ) % 4]->pt.y ) / 2;
     // compute midpoints of "parallel" quad sides 2
     float x3 = ( quad1->corners[corner1]->pt.x + quad1->corners[( corner1 + 3 ) % 4]->pt.x ) / 2;
     float y3 = ( quad1->corners[corner1]->pt.y + quad1->corners[( corner1 + 3 ) % 4]->pt.y ) / 2;
-    float x4 = ( quad1->corners[( corner1 + 1 ) % 4]->pt.x + quad1->corners[( corner1 + 2 ) % 4]->pt.x ) / 2;
-    float y4 = ( quad1->corners[( corner1 + 1 ) % 4]->pt.y + quad1->corners[( corner1 + 2 ) % 4]->pt.y ) / 2;
+    float x4
+    = ( quad1->corners[( corner1 + 1 ) % 4]->pt.x + quad1->corners[( corner1 + 2 ) % 4]->pt.x ) / 2;
+    float y4
+    = ( quad1->corners[( corner1 + 1 ) % 4]->pt.y + quad1->corners[( corner1 + 2 ) % 4]->pt.y ) / 2;
 
     // MARTIN: Heuristic
     // For corner2 of quad2 to be considered,
@@ -1796,13 +1845,17 @@ Chessboard::matchCorners( ChessboardQuadPtr& quad1, int corner1, ChessboardQuadP
     // quad sides 1
     float u1 = ( quad2->corners[corner2]->pt.x + quad2->corners[( corner2 + 1 ) % 4]->pt.x ) / 2;
     float v1 = ( quad2->corners[corner2]->pt.y + quad2->corners[( corner2 + 1 ) % 4]->pt.y ) / 2;
-    float u2 = ( quad2->corners[( corner2 + 2 ) % 4]->pt.x + quad2->corners[( corner2 + 3 ) % 4]->pt.x ) / 2;
-    float v2 = ( quad2->corners[( corner2 + 2 ) % 4]->pt.y + quad2->corners[( corner2 + 3 ) % 4]->pt.y ) / 2;
+    float u2
+    = ( quad2->corners[( corner2 + 2 ) % 4]->pt.x + quad2->corners[( corner2 + 3 ) % 4]->pt.x ) / 2;
+    float v2
+    = ( quad2->corners[( corner2 + 2 ) % 4]->pt.y + quad2->corners[( corner2 + 3 ) % 4]->pt.y ) / 2;
     // compute midpoints of "parallel" quad sides 2
     float u3 = ( quad2->corners[corner2]->pt.x + quad2->corners[( corner2 + 3 ) % 4]->pt.x ) / 2;
     float v3 = ( quad2->corners[corner2]->pt.y + quad2->corners[( corner2 + 3 ) % 4]->pt.y ) / 2;
-    float u4 = ( quad2->corners[( corner2 + 1 ) % 4]->pt.x + quad2->corners[( corner2 + 2 ) % 4]->pt.x ) / 2;
-    float v4 = ( quad2->corners[( corner2 + 1 ) % 4]->pt.y + quad2->corners[( corner2 + 2 ) % 4]->pt.y ) / 2;
+    float u4
+    = ( quad2->corners[( corner2 + 1 ) % 4]->pt.x + quad2->corners[( corner2 + 2 ) % 4]->pt.x ) / 2;
+    float v4
+    = ( quad2->corners[( corner2 + 1 ) % 4]->pt.y + quad2->corners[( corner2 + 2 ) % 4]->pt.y ) / 2;
 
     // MARTIN: Heuristic
     // For corner2 of quad2 to be considered,
