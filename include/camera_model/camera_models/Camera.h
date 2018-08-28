@@ -46,6 +46,7 @@ class Camera
         KANNALA_BRANDT,
         MEI,
         PINHOLE,
+        PINHOLE_FULL,
         SCARAMUZZA,
         POLYFISHEYE,
         FOV,
@@ -166,12 +167,12 @@ class Camera
     virtual std::string parametersToString( void ) const = 0;
 
     /**
-       * \brief Calculates the reprojection distance between points
-       *
-       * \param P1 first 3D point coordinates
-       * \param P2 second 3D point coordinates
-       * \return euclidean distance in the plane
-       */
+     * \brief Calculates the reprojection distance between points
+     *
+     * \param P1 first 3D point coordinates
+     * \param P2 second 3D point coordinates
+     * \return euclidean distance in the plane
+     */
     double reprojectionDist( const Eigen::Vector3d& P1, const Eigen::Vector3d& P2 ) const;
 
     double reprojectionError( const std::vector< std::vector< cv::Point3f > >& objectPoints,

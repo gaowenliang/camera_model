@@ -77,7 +77,7 @@ cv_utils::fisheye::PreProcess::do_preprocess( cv::Mat image_input )
     }
     else
     {
-        std::cout << " is_preprocess false " << std::endl;
+        //        std::cout << " is_preprocess false " << std::endl;
         return image_input;
     }
 }

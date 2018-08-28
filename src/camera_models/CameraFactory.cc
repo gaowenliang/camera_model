@@ -6,6 +6,7 @@
 #include "camera_model/camera_models/EquidistantCamera.h"
 #include "camera_model/camera_models/FovCamera.h"
 #include "camera_model/camera_models/PinholeCamera.h"
+#include "camera_model/camera_models/PinholeFullCamera.h"
 #include "camera_model/camera_models/PolyFisheyeCamera.h"
 #include "camera_model/camera_models/ScaramuzzaCamera.h"
 #include "camera_model/camera_models/SplineCamera.h"
@@ -54,6 +55,17 @@ CameraFactory::generateCamera( Camera::ModelType modelType, const std::string& c
             params.cameraName( )             = cameraName;
             params.imageWidth( )             = imageSize.width;
             params.imageHeight( )            = imageSize.height;
+            camera->setParameters( params );
+            return camera;
+        }
+        case Camera::PINHOLE_FULL:
+        {
+            PinholeFullCameraPtr camera( new PinholeFullCamera );
+
+            PinholeFullCamera::Parameters params = camera->getParameters( );
+            params.cameraName( )                 = cameraName;
+            params.imageWidth( )                 = imageSize.width;
+            params.imageHeight( )                = imageSize.height;
             camera->setParameters( params );
             return camera;
         }

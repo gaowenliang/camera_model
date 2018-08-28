@@ -4,6 +4,7 @@
 #include "camera_model/camera_models/EquidistantCamera.h"
 #include "camera_model/camera_models/FovCamera.h"
 #include "camera_model/camera_models/PinholeCamera.h"
+#include "camera_model/camera_models/PinholeFullCamera.h"
 #include "camera_model/camera_models/PolyFisheyeCamera.h"
 #include "camera_model/camera_models/ScaramuzzaCamera.h"
 #include "camera_model/camera_models/SplineCamera.h"
@@ -15,8 +16,13 @@ namespace camera_model
 
 template< typename T >
 void
-worldToCameraTransform(
-const T* const q_cam_odo, const T* const t_cam_odo, const T* const p_odo, const T* const att_odo, T* q, T* t, bool optimize_cam_odo_z = true )
+worldToCameraTransform( const T* const q_cam_odo,
+                        const T* const t_cam_odo,
+                        const T* const p_odo,
+                        const T* const att_odo,
+                        T* q,
+                        T* t,
+                        bool optimize_cam_odo_z = true )
 {
     Eigen::Quaternion< T > q_z_inv( cos( att_odo[0] / T( 2 ) ), T( 0 ), T( 0 ), -sin( att_odo[0] / T( 2 ) ) );
     Eigen::Quaternion< T > q_y_inv( cos( att_odo[1] / T( 2 ) ), T( 0 ), -sin( att_odo[1] / T( 2 ) ), T( 0 ) );
@@ -70,17 +76,22 @@ class ReprojectionError1
     {
     }
 
-    ReprojectionError1( const Eigen::Vector3d& observed_P, const Eigen::Vector2d& observed_p, const Eigen::Matrix2d& sqrtPrecisionMat )
+    ReprojectionError1( const Eigen::Vector3d& observed_P,
+                        const Eigen::Vector2d& observed_p,
+                        const Eigen::Matrix2d& sqrtPrecisionMat )
     : m_observed_P( observed_P )
     , m_observed_p( observed_p )
     , m_sqrtPrecisionMat( sqrtPrecisionMat )
     {
     }
 
-    ReprojectionError1( const std::vector< double >& intrinsic_params, const Eigen::Vector3d& observed_P, const Eigen::Vector2d& observed_p )
+    ReprojectionError1( const std::vector< double >& intrinsic_params,
+                        const Eigen::Vector3d& observed_P,
+                        const Eigen::Vector2d& observed_p )
     : m_intrinsic_params( intrinsic_params )
     , m_observed_P( observed_P )
     , m_observed_p( observed_p )
+    , m_sqrtPrecisionMat( Eigen::Matrix2d::Identity( ) )
     {
     }
 
@@ -103,9 +114,34 @@ class ReprojectionError1
         return true;
     }
 
+    // variables: camera extrinsics
+    template< typename T >
+    bool operator( )( const T* const q, const T* const t, T* residuals ) const
+    {
+        Eigen::Matrix< T, 3, 1 > P = m_observed_P.cast< T >( );
+
+        std::vector< T > intrinsic_params( m_intrinsic_params.begin( ), m_intrinsic_params.end( ) );
+
+        Eigen::Matrix< T, 2, 1 > predicted_p;
+        CameraT::spaceToPlane( intrinsic_params.data( ), q, t, P, predicted_p );
+
+        Eigen::Matrix< T, 2, 1 > e = predicted_p - m_observed_p.cast< T >( );
+
+        Eigen::Matrix< T, 2, 1 > e_weighted = m_sqrtPrecisionMat.cast< T >( ) * e;
+
+        residuals[0] = e_weighted( 0 );
+        residuals[1] = e_weighted( 1 );
+
+        return true;
+    }
+
     // variables: camera-odometry transforms and odometry poses
     template< typename T >
-    bool operator( )( const T* const q_cam_odo, const T* const t_cam_odo, const T* const p_odo, const T* const att_odo, T* residuals ) const
+    bool operator( )( const T* const q_cam_odo,
+                      const T* const t_cam_odo,
+                      const T* const p_odo,
+                      const T* const att_odo,
+                      T* residuals ) const
     {
         T q[4], t[3];
         worldToCameraTransform( q_cam_odo, t_cam_odo, p_odo, att_odo, q, t );
@@ -207,7 +243,9 @@ class ReprojectionError3
     {
     }
 
-    ReprojectionError3( const std::vector< double >& intrinsic_params, const Eigen::Vector2d& observed_p, const Eigen::Matrix2d& sqrtPrecisionMat )
+    ReprojectionError3( const std::vector< double >& intrinsic_params,
+                        const Eigen::Vector2d& observed_p,
+                        const Eigen::Matrix2d& sqrtPrecisionMat )
     : m_intrinsic_params( intrinsic_params )
     , m_observed_p( observed_p )
     , m_sqrtPrecisionMat( sqrtPrecisionMat )
@@ -333,8 +371,8 @@ class ReprojectionError3
                            T( m_cam_odo_q.coeffs( )( 2 ) ),
                            T( m_cam_odo_q.coeffs( )( 3 ) ) };
         T t_cam_odo[3] = { T( m_cam_odo_t( 0 ) ), T( m_cam_odo_t( 1 ) ), T( m_cam_odo_t( 2 ) ) };
-        T p_odo[3]     = { T( m_odo_pos( 0 ) ), T( m_odo_pos( 1 ) ), T( m_odo_pos( 2 ) ) };
-        T att_odo[3]   = { T( m_odo_att( 0 ) ), T( m_odo_att( 1 ) ), T( m_odo_att( 2 ) ) };
+        T p_odo[3]   = { T( m_odo_pos( 0 ) ), T( m_odo_pos( 1 ) ), T( m_odo_pos( 2 ) ) };
+        T att_odo[3] = { T( m_odo_att( 0 ) ), T( m_odo_att( 1 ) ), T( m_odo_att( 2 ) ) };
         T q[4], t[3];
 
         worldToCameraTransform( q_cam_odo, t_cam_odo, p_odo, att_odo, q, t, m_optimize_cam_odo_z );
@@ -379,7 +417,9 @@ class StereoReprojectionError
     public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    StereoReprojectionError( const Eigen::Vector3d& observed_P, const Eigen::Vector2d& observed_p_l, const Eigen::Vector2d& observed_p_r )
+    StereoReprojectionError( const Eigen::Vector3d& observed_P,
+                             const Eigen::Vector2d& observed_p_l,
+                             const Eigen::Vector2d& observed_p_r )
     : m_observed_P( observed_P )
     , m_observed_p_l( observed_p_l )
     , m_observed_p_r( observed_p_r )
@@ -463,19 +503,72 @@ CostFunctionFactory::generateCostFunction( const CameraConstPtr& camera,
 
     switch ( flags )
     {
+        case CAMERA_POSE:
+            switch ( camera->modelType( ) )
+            {
+                case Camera::KANNALA_BRANDT:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< EquidistantCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< EquidistantCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+                case Camera::PINHOLE:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< PinholeCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+                case Camera::PINHOLE_FULL:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeFullCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< PinholeFullCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+                case Camera::MEI:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< CataCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< CataCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+                case Camera::SCARAMUZZA:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< OCAMCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< OCAMCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+                case Camera::POLYFISHEYE:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< PolyFisheyeCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< PolyFisheyeCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+                case Camera::SPLINE:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< SplineCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< SplineCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+                case Camera::FOV:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< FovCamera >, 2, 4, 3 >(
+                    new ReprojectionError1< FovCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
+            }
+            break;
         case CAMERA_INTRINSICS | CAMERA_POSE:
             switch ( camera->modelType( ) )
             {
                 case Camera::KANNALA_BRANDT:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< EquidistantCamera >, 2, 8, 4, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< EquidistantCamera >, 2, 8, 4, 3 >(
                     new ReprojectionError1< EquidistantCamera >( observed_P, observed_p ) );
                     break;
                 case Camera::PINHOLE:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeCamera >, 2, 8, 4, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeCamera >, 2, 8, 4, 3 >(
                     new ReprojectionError1< PinholeCamera >( observed_P, observed_p ) );
                     break;
+                case Camera::PINHOLE_FULL:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeFullCamera >, 2, 12, 4, 3 >(
+                    new ReprojectionError1< PinholeFullCamera >( observed_P, observed_p ) );
+                    break;
                 case Camera::MEI:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< CataCamera >, 2, 9, 4, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< CataCamera >, 2, 9, 4, 3 >(
                     new ReprojectionError1< CataCamera >( observed_P, observed_p ) );
                     break;
                 case Camera::SCARAMUZZA:
@@ -509,15 +602,23 @@ CostFunctionFactory::generateCostFunction( const CameraConstPtr& camera,
                     new ReprojectionError1< EquidistantCamera >( intrinsic_params, observed_P, observed_p ) );
                     break;
                 case Camera::PINHOLE:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeCamera >, 2, 4, 3, 3, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeCamera >, 2, 4, 3, 3, 3 >(
                     new ReprojectionError1< PinholeCamera >( intrinsic_params, observed_P, observed_p ) );
                     break;
+                case Camera::PINHOLE_FULL:
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< PinholeFullCamera >, 2, 4, 3, 3, 3 >(
+                    new ReprojectionError1< PinholeFullCamera >( intrinsic_params, observed_P, observed_p ) );
+                    break;
                 case Camera::MEI:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< CataCamera >, 2, 4, 3, 3, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< CataCamera >, 2, 4, 3, 3, 3 >(
                     new ReprojectionError1< CataCamera >( intrinsic_params, observed_P, observed_p ) );
                     break;
                 case Camera::SCARAMUZZA:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< OCAMCamera >, 2, 4, 3, 3, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< OCAMCamera >, 2, 4, 3, 3, 3 >(
                     new ReprojectionError1< OCAMCamera >( intrinsic_params, observed_P, observed_p ) );
                     break;
                 case Camera::POLYFISHEYE:
@@ -526,11 +627,13 @@ CostFunctionFactory::generateCostFunction( const CameraConstPtr& camera,
                     new ReprojectionError1< PolyFisheyeCamera >( intrinsic_params, observed_P, observed_p ) );
                     break;
                 case Camera::SPLINE:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< SplineCamera >, 2, 4, 3, 3, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< SplineCamera >, 2, 4, 3, 3, 3 >(
                     new ReprojectionError1< SplineCamera >( intrinsic_params, observed_P, observed_p ) );
                     break;
                 case Camera::FOV:
-                    costFunction = new ceres::AutoDiffCostFunction< ReprojectionError1< FovCamera >, 2, 4, 3, 3, 3 >(
+                    costFunction
+                    = new ceres::AutoDiffCostFunction< ReprojectionError1< FovCamera >, 2, 4, 3, 3, 3 >(
                     new ReprojectionError1< FovCamera >( intrinsic_params, observed_P, observed_p ) );
                     break;
             }

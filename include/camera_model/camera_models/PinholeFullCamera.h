@@ -1,5 +1,5 @@
-#ifndef PINHOLECAMERA_H
-#define PINHOLECAMERA_H
+#ifndef PinholeFullCAMERA_H
+#define PinholeFullCAMERA_H
 
 #include <opencv2/core/core.hpp>
 #include <string>
@@ -10,7 +10,7 @@
 namespace camera_model
 {
 
-class PinholeCamera : public Camera
+class PinholeFullCamera : public Camera
 {
     public:
     class Parameters : public Camera::Parameters
@@ -22,6 +22,10 @@ class PinholeCamera : public Camera
                     int h,
                     double k1,
                     double k2,
+                    double k3,
+                    double k4,
+                    double k5,
+                    double k6,
                     double p1,
                     double p2,
                     double fx,
@@ -31,6 +35,10 @@ class PinholeCamera : public Camera
 
         double& k1( void );
         double& k2( void );
+        double& k3( void );
+        double& k4( void );
+        double& k5( void );
+        double& k6( void );
         double& p1( void );
         double& p2( void );
         double& fx( void );
@@ -41,6 +49,10 @@ class PinholeCamera : public Camera
         double xi( void ) const;
         double k1( void ) const;
         double k2( void ) const;
+        double k3( void ) const;
+        double k4( void ) const;
+        double k5( void ) const;
+        double k6( void ) const;
         double p1( void ) const;
         double p2( void ) const;
         double fx( void ) const;
@@ -63,28 +75,36 @@ class PinholeCamera : public Camera
         double m_fy;
         double m_cx;
         double m_cy;
+        double m_k3;
+        double m_k4;
+        double m_k5;
+        double m_k6;
     };
 
-    PinholeCamera( );
+    PinholeFullCamera( );
 
     /**
      * \brief Constructor from the projection model parameters
      */
-    PinholeCamera( const std::string& cameraName,
-                   int imageWidth,
-                   int imageHeight,
-                   double k1,
-                   double k2,
-                   double p1,
-                   double p2,
-                   double fx,
-                   double fy,
-                   double cx,
-                   double cy );
+    PinholeFullCamera( const std::string& cameraName,
+                       int imageWidth,
+                       int imageHeight,
+                       double k1,
+                       double k2,
+                       double k3,
+                       double k4,
+                       double k5,
+                       double k6,
+                       double p1,
+                       double p2,
+                       double fx,
+                       double fy,
+                       double cx,
+                       double cy );
     /**
      * \brief Constructor from the projection model parameters
      */
-    PinholeCamera( const Parameters& params );
+    PinholeFullCamera( const Parameters& params );
 
     Camera::ModelType modelType( void ) const;
     const std::string& cameraName( void ) const;
@@ -107,6 +127,10 @@ class PinholeCamera : public Camera
 
         params.k1( ) = 0.0;
         params.k2( ) = 0.0;
+        params.k3( ) = 0.0;
+        params.k4( ) = 0.0;
+        params.k5( ) = 0.0;
+        params.k6( ) = 0.0;
         params.p1( ) = 0.0;
         params.p2( ) = 0.0;
 
@@ -188,16 +212,16 @@ class PinholeCamera : public Camera
     bool m_noDistortion;
 };
 
-typedef boost::shared_ptr< PinholeCamera > PinholeCameraPtr;
-typedef boost::shared_ptr< const PinholeCamera > PinholeCameraConstPtr;
+typedef boost::shared_ptr< PinholeFullCamera > PinholeFullCameraPtr;
+typedef boost::shared_ptr< const PinholeFullCamera > PinholeFullCameraConstPtr;
 
 template< typename T >
 void
-PinholeCamera::spaceToPlane( const T* const params,
-                             const T* const q,
-                             const T* const t,
-                             const Eigen::Matrix< T, 3, 1 >& P,
-                             Eigen::Matrix< T, 2, 1 >& p )
+PinholeFullCamera::spaceToPlane( const T* const params,
+                                 const T* const q,
+                                 const T* const t,
+                                 const Eigen::Matrix< T, 3, 1 >& P,
+                                 Eigen::Matrix< T, 2, 1 >& p )
 {
     T P_w[3];
     P_w[0] = T( P( 0 ) );
@@ -218,28 +242,36 @@ PinholeCamera::spaceToPlane( const T* const params,
     // project 3D object point to the image plane
     T k1    = params[0];
     T k2    = params[1];
-    T p1    = params[2];
-    T p2    = params[3];
-    T fx    = params[4];
-    T fy    = params[5];
+    T k3    = params[2];
+    T k4    = params[3];
+    T k5    = params[4];
+    T k6    = params[5];
+    T p1    = params[6];
+    T p2    = params[7];
+    T fx    = params[8];
+    T fy    = params[9];
     T alpha = T( 0 ); // cameraParams.alpha();
-    T cx    = params[6];
-    T cy    = params[7];
+    T cx    = params[10];
+    T cy    = params[11];
 
     // Transform to model plane
-    T u = P_c[0] / P_c[2];
-    T v = P_c[1] / P_c[2];
+    T x = P_c[0] / P_c[2];
+    T y = P_c[1] / P_c[2];
+    // T z = P_c[2] / P_c[2];
 
-    T rho_sqr = u * u + v * v;
+    T r2      = x * x + y * y;
+    T r4      = r2 * r2;
+    T r6      = r4 * r2;
+    T a1      = T( 2 ) * x * y;
+    T a2      = r2 + T( 2 ) * x * x;
+    T a3      = r2 + T( 2 ) * y * y;
+    T cdist   = T( 1 ) + k1 * r2 + k2 * r4 + k3 * r6;
+    T icdist2 = T( 1. ) / ( T( 1 ) + k4 * r2 + k5 * r4 + k6 * r6 );
+    T xd0     = x * cdist * icdist2 + p1 * a1 + p2 * a2; // + k[8] * r2 + k[9] * r4;
+    T yd0     = y * cdist * icdist2 + p1 * a3 + p2 * a1; // + k[10] * r2 + k[11] * r4;
 
-    T L  = T( 1.0 ) + k1 * rho_sqr + k2 * rho_sqr * rho_sqr;
-    T du = T( 2.0 ) * p1 * u * v + p2 * ( rho_sqr + T( 2.0 ) * u * u );
-    T dv = p1 * ( rho_sqr + T( 2.0 ) * v * v ) + T( 2.0 ) * p2 * u * v;
-
-    u      = L * u + du;
-    v      = L * v + dv;
-    p( 0 ) = fx * ( u + alpha * v ) + cx;
-    p( 1 ) = fy * v + cy;
+    p( 0 ) = xd0 * fx + cx;
+    p( 1 ) = yd0 * fy + cy;
 }
 }
 

@@ -1,4 +1,4 @@
-#include "camera_model/calib/CameraCalibration.h"
+#include "camera_model/calib/CameraCalibrationTest.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -22,27 +22,25 @@
 namespace camera_model
 {
 
-CameraCalibration::CameraCalibration( )
+CameraCalibrationTest::CameraCalibrationTest( )
 : m_boardSize( cv::Size( 0, 0 ) )
 , m_squareSize( 0.0f )
 , m_verbose( false )
 {
 }
 
-CameraCalibration::CameraCalibration( const Camera::ModelType modelType,
-                                      const std::string& cameraName,
-                                      const cv::Size& imageSize,
-                                      const cv::Size& boardSize,
-                                      float squareSize )
+CameraCalibrationTest::CameraCalibrationTest( const std::string& cameraFile, //
+                                              const cv::Size& boardSize,
+                                              float squareSize )
 : m_boardSize( boardSize )
 , m_squareSize( squareSize )
 , m_verbose( false )
 {
-    m_camera = CameraFactory::instance( )->generateCamera( modelType, cameraName, imageSize );
+    m_camera = CameraFactory::instance( )->generateCameraFromYamlFile( cameraFile );
 }
 
 void
-CameraCalibration::clear( void )
+CameraCalibrationTest::clear( void )
 {
     m_imagePoints.clear( );
     m_scenePoints.clear( );
@@ -51,14 +49,14 @@ CameraCalibration::clear( void )
 }
 
 void
-CameraCalibration::addImage( const cv::Mat image, const std::string name )
+CameraCalibrationTest::addImage( const cv::Mat image, const std::string name )
 {
     cbImages.push_back( image );
     cbImageNames.push_back( name );
 }
 
 void
-CameraCalibration::addChessboardData( const std::vector< cv::Point2f >& corners )
+CameraCalibrationTest::addChessboardData( const std::vector< cv::Point2f >& corners )
 {
     m_imagePoints.push_back( corners );
 
@@ -74,19 +72,16 @@ CameraCalibration::addChessboardData( const std::vector< cv::Point2f >& corners 
 }
 
 bool
-CameraCalibration::calibrate( void )
+CameraCalibrationTest::calibrate( void )
 {
     // compute intrinsic camera parameters and extrinsic parameters for each of the views
     std::vector< cv::Mat > rvecs;
     std::vector< cv::Mat > tvecs;
-    //    bool ret = calibrateHelper( m_camera, rvecs, tvecs, m_imagePoints, m_scenePoints
-    //    );
 
     rvecs.assign( m_scenePoints.size( ), cv::Mat( ) );
     tvecs.assign( m_scenePoints.size( ), cv::Mat( ) );
 
     // STEP 1: Estimate intrinsics
-    m_camera->estimateIntrinsics( m_boardSize, m_scenePoints, m_imagePoints );
     std::cout << "[" << m_camera->cameraName( ) << "] "
               << "# INFO: "
               << "Initialization intrinsic parameters" << std::endl
@@ -94,7 +89,6 @@ CameraCalibration::calibrate( void )
               << "-----------------------------------------------" << std::endl;
 
     // STEP 2: Estimate extrinsics
-
 #pragma omp parallel for
     for ( size_t i = 0; i < m_scenePoints.size( ); ++i )
     {
@@ -105,7 +99,7 @@ CameraCalibration::calibrate( void )
     }
 
     // STEP 3: Optimizatoin
-    CalibrationOptimization( m_camera, rvecs, tvecs, m_imagePoints, m_scenePoints );
+    CalibrationDataTest( m_camera, rvecs, tvecs, m_imagePoints, m_scenePoints );
 
     // Compute measurement covariance.
     std::vector< std::vector< cv::Point2f > > errVec( m_imagePoints.size( ) );
@@ -176,11 +170,6 @@ CameraCalibration::calibrate( void )
               << "-----------------------------------------------" << std::endl;
 
     // STEP 3: Optimizatoin with good measurement point
-    std::cout << "Calibration again." << std::endl;
-
-    CalibrationOptimization( m_camera, rvecsGood, tvecsGood, m_imageGoodPoints, m_sceneGoodPoints );
-    std::cout << "Recalibration done." << std::endl;
-
     Eigen::Vector2d errMean = errSum / static_cast< double >( errCount );
 
     Eigen::Matrix2d measurementCovariance = Eigen::Matrix2d::Zero( );
@@ -207,95 +196,107 @@ CameraCalibration::calibrate( void )
 }
 
 int
-CameraCalibration::sampleCount( void ) const
+CameraCalibrationTest::sampleCount( void ) const
 {
     return m_imagePoints.size( );
 }
 
 std::vector< std::vector< cv::Point2f > >&
-CameraCalibration::imagePoints( void )
+CameraCalibrationTest::imagePoints( void )
 {
     return m_imagePoints;
 }
 
 const std::vector< std::vector< cv::Point2f > >&
-CameraCalibration::imagePoints( void ) const
+CameraCalibrationTest::imagePoints( void ) const
 {
     return m_imagePoints;
 }
 
 std::vector< std::vector< cv::Point3f > >&
-CameraCalibration::scenePoints( void )
+CameraCalibrationTest::scenePoints( void )
 {
     return m_scenePoints;
 }
 
 const std::vector< std::vector< cv::Point3f > >&
-CameraCalibration::scenePoints( void ) const
+CameraCalibrationTest::scenePoints( void ) const
 {
     return m_scenePoints;
 }
 
 CameraPtr&
-CameraCalibration::camera( void )
+CameraCalibrationTest::camera( void )
 {
     return m_camera;
 }
 
 const CameraConstPtr
-CameraCalibration::camera( void ) const
+CameraCalibrationTest::camera( void ) const
 {
     return m_camera;
 }
 
 Eigen::Matrix2d&
-CameraCalibration::measurementCovariance( void )
+CameraCalibrationTest::measurementCovariance( void )
 {
     return m_measurementCovariance;
 }
 
 const Eigen::Matrix2d&
-CameraCalibration::measurementCovariance( void ) const
+CameraCalibrationTest::measurementCovariance( void ) const
 {
     return m_measurementCovariance;
 }
 
 cv::Mat&
-CameraCalibration::cameraPoses( void )
+CameraCalibrationTest::cameraPoses( void )
 {
     return m_cameraPoses;
 }
 
 const cv::Mat&
-CameraCalibration::cameraPoses( void ) const
+CameraCalibrationTest::cameraPoses( void ) const
 {
     return m_cameraPoses;
 }
 
 void
-CameraCalibration::drawResultsInitial( std::vector< cv::Mat >& images,
-                                       std::vector< std::string >& imageNames,
-                                       cv::Mat& DistributedImage ) const
+CameraCalibrationTest::drawResultsInitial( std::vector< cv::Mat >& images,
+                                           std::vector< std::string >& imageNames,
+                                           cv::Mat& DistributedImage ) const
 {
-    drawResults( images, imageNames, DistributedImage, m_cameraPoseRvecsShow, m_cameraPoseTvecsShow, m_imagePointsShow, m_scenePointsShow );
+    drawResults( images,
+                 imageNames, //
+                 DistributedImage,
+                 m_cameraPoseRvecsShow,
+                 m_cameraPoseTvecsShow,
+                 m_imagePointsShow,
+                 m_scenePointsShow );
 }
 
 void
-CameraCalibration::drawResultsFiltered( std::vector< cv::Mat >& images,
-                                        std::vector< std::string >& imageNames,
-                                        cv::Mat& DistributedImage ) const
+CameraCalibrationTest::drawResultsFiltered( std::vector< cv::Mat >& images,
+                                            std::vector< std::string >& imageNames,
+                                            cv::Mat& DistributedImage ) const
 {
-    drawResults( images, imageNames, DistributedImage, m_cameraPoseRvecsShow, m_cameraPoseTvecsShow, m_imageGoodPointsShow, m_sceneGoodPointsShow );
+    drawResults( images,
+                 imageNames,
+                 DistributedImage, //
+                 m_cameraPoseRvecsShow,
+                 m_cameraPoseTvecsShow,
+                 m_imageGoodPointsShow,
+                 m_sceneGoodPointsShow );
 }
 
 void
-CameraCalibration::drawResults( std::vector< cv::Mat >& images,
-                                std::vector< std::string >& imageNames,
-                                const cv::Mat& DistributedImage,
-                                const std::vector< cv::Mat > cameraPoseRs,
-                                const std::vector< cv::Mat > cameraPoseTs,
-                                const std::vector< std::vector< cv::Point2f > > imagePoints,
-                                const std::vector< std::vector< cv::Point3f > > scenePoints ) const
+CameraCalibrationTest::drawResults( std::vector< cv::Mat >& images,
+                                    std::vector< std::string >& imageNames,
+                                    const cv::Mat& DistributedImage,
+                                    const std::vector< cv::Mat > cameraPoseRs,
+                                    const std::vector< cv::Mat > cameraPoseTs,
+                                    const std::vector< std::vector< cv::Point2f > > imagePoints,
+                                    const std::vector< std::vector< cv::Point3f > > scenePoints ) const
 {
     int drawShiftBits  = 4;
     int drawMultiplier = 1 << drawShiftBits;
@@ -397,13 +398,13 @@ CameraCalibration::drawResults( std::vector< cv::Mat >& images,
 }
 
 void
-CameraCalibration::writeParams( const std::string& filename ) const
+CameraCalibrationTest::writeParams( const std::string& filename ) const
 {
     m_camera->writeParametersToYamlFile( filename );
 }
 
 bool
-CameraCalibration::writeChessboardData( const std::string& filename ) const
+CameraCalibrationTest::writeChessboardData( const std::string& filename ) const
 {
     std::ofstream ofs( filename.c_str( ), std::ios::out | std::ios::binary );
     if ( !ofs.is_open( ) )
@@ -462,7 +463,7 @@ CameraCalibration::writeChessboardData( const std::string& filename ) const
 }
 
 bool
-CameraCalibration::readChessboardData( const std::string& filename )
+CameraCalibrationTest::readChessboardData( const std::string& filename )
 {
     std::ifstream ifs( filename.c_str( ), std::ios::in | std::ios::binary );
     if ( !ifs.is_open( ) )
@@ -536,17 +537,17 @@ CameraCalibration::readChessboardData( const std::string& filename )
 }
 
 void
-CameraCalibration::setVerbose( bool verbose )
+CameraCalibrationTest::setVerbose( bool verbose )
 {
     m_verbose = verbose;
 }
 
 bool
-CameraCalibration::calibrateHelper( CameraPtr& camera,
-                                    std::vector< cv::Mat >& rvecs,
-                                    std::vector< cv::Mat >& tvecs,
-                                    std::vector< std::vector< cv::Point2f > >& imagePoints,
-                                    std::vector< std::vector< cv::Point3f > >& scenePoints ) const
+CameraCalibrationTest::calibrateHelper( CameraPtr& camera,
+                                        std::vector< cv::Mat >& rvecs,
+                                        std::vector< cv::Mat >& tvecs,
+                                        std::vector< std::vector< cv::Point2f > >& imagePoints,
+                                        std::vector< std::vector< cv::Point3f > >& scenePoints ) const
 {
     rvecs.assign( scenePoints.size( ), cv::Mat( ) );
     tvecs.assign( scenePoints.size( ), cv::Mat( ) );
@@ -570,28 +571,69 @@ CameraCalibration::calibrateHelper( CameraPtr& camera,
     return true;
 }
 
+double
+CameraCalibrationTest::reprojectionError( const std::vector< std::vector< cv::Point3f > >& objectPoints,
+                                          const std::vector< std::vector< cv::Point2f > >& imagePoints,
+                                          const std::vector< cv::Mat >& rvecs,
+                                          const std::vector< cv::Mat >& tvecs,
+                                          cv::OutputArray _perViewErrors ) const
+{
+    int imageCount     = objectPoints.size( );
+    size_t pointsSoFar = 0;
+    double totalErr    = 0.0;
+
+    bool computePerViewErrors = _perViewErrors.needed( );
+    cv::Mat perViewErrors;
+    if ( computePerViewErrors )
+    {
+        _perViewErrors.create( imageCount, 1, CV_64F );
+        perViewErrors = _perViewErrors.getMat( );
+    }
+
+    int i = 0;
+    for ( i = 0; i < imageCount; ++i )
+    {
+        size_t pointCount = imagePoints.at( i ).size( );
+
+        pointsSoFar += pointCount;
+
+        std::vector< cv::Point2f > estImagePoints;
+        m_camera->projectPoints( objectPoints.at( i ), rvecs.at( i ), tvecs.at( i ), estImagePoints );
+
+        double err = 0.0;
+        for ( size_t j = 0; j < imagePoints.at( i ).size( ); ++j )
+        {
+            err += cv::norm( imagePoints.at( i ).at( j ) - estImagePoints.at( j ) );
+        }
+
+        if ( computePerViewErrors )
+        {
+            perViewErrors.at< double >( i ) = err / pointCount;
+        }
+
+        std::cout << " checcboard image " << i << ", reprojection error "
+                  << "\033[31;47;1m" << err / imagePoints.at( i ).size( ) << "\033[0m"
+                  << "\n";
+
+        totalErr += err;
+    }
+
+    return totalErr / pointsSoFar;
+}
+
 bool
-CameraCalibration::CalibrationOptimization( CameraPtr& camera,
+CameraCalibrationTest::CalibrationDataTest( CameraPtr& camera,
                                             std::vector< cv::Mat >& rvecs,
                                             std::vector< cv::Mat >& tvecs,
                                             std::vector< std::vector< cv::Point2f > >& imagePoints,
                                             std::vector< std::vector< cv::Point3f > >& scenePoints ) const
 {
-    if ( m_verbose )
-    {
-        std::cout << "[" << camera->cameraName( ) << "] "
-                  << "# INFO: "
-                  << "Initial reprojection error: " << std::fixed << std::setprecision( 3 )
-                  << camera->reprojectionError( scenePoints, imagePoints, rvecs, tvecs )
-                  << " pixels" << std::endl;
-    }
 
-    // STEP 3: optimization using ceres
     optimize( camera, rvecs, tvecs, imagePoints, scenePoints );
 
     if ( m_verbose )
     {
-        double err = camera->reprojectionError( scenePoints, imagePoints, rvecs, tvecs );
+        double err = reprojectionError( scenePoints, imagePoints, rvecs, tvecs );
         double rms = camera->reprojectionRMSError( scenePoints, imagePoints, rvecs, tvecs );
 
         std::cout << "[" << camera->cameraName( ) << "] "
@@ -611,11 +653,11 @@ CameraCalibration::CalibrationOptimization( CameraPtr& camera,
 }
 
 void
-CameraCalibration::optimize( CameraPtr& camera,
-                             std::vector< cv::Mat >& rvecs,
-                             std::vector< cv::Mat >& tvecs,
-                             const std::vector< std::vector< cv::Point2f > >& imagePoints,
-                             const std::vector< std::vector< cv::Point3f > >& scenePoints ) const
+CameraCalibrationTest::optimize( CameraPtr& camera,
+                                 std::vector< cv::Mat >& rvecs,
+                                 std::vector< cv::Mat >& tvecs,
+                                 const std::vector< std::vector< cv::Point2f > >& imagePoints,
+                                 const std::vector< std::vector< cv::Point3f > >& scenePoints ) const
 {
     // Use ceres to do optimization
     ceres::Problem problem;
@@ -631,10 +673,6 @@ CameraCalibration::optimize( CameraPtr& camera,
         tvecs[i].at< double >( 1 ), tvecs[i].at< double >( 2 );
     }
 
-    std::vector< double > intrinsicCameraParams;
-    camera->writeParameters( intrinsicCameraParams );
-
-    //    std::en
     // create residuals for each observation
     for ( size_t i = 0; i < imagePoints.size( ); ++i )
     {
@@ -644,15 +682,11 @@ CameraCalibration::optimize( CameraPtr& camera,
             const cv::Point2f& ipt = imagePoints.at( i ).at( j );
 
             ceres::CostFunction* costFunction = CostFunctionFactory::instance( )->generateCostFunction(
-            camera,
-            Eigen::Vector3d( spt.x, spt.y, spt.z ),
-            Eigen::Vector2d( ipt.x, ipt.y ),
-            CAMERA_INTRINSICS | CAMERA_POSE );
+            camera, Eigen::Vector3d( spt.x, spt.y, spt.z ), Eigen::Vector2d( ipt.x, ipt.y ), CAMERA_POSE );
 
             ceres::LossFunction* lossFunction = new ceres::CauchyLoss( 1.0 );
             problem.AddResidualBlock( costFunction,
                                       lossFunction,
-                                      intrinsicCameraParams.data( ),
                                       transformVec.at( i ).rotationData( ),
                                       transformVec.at( i ).translationData( ) );
         }
@@ -667,7 +701,6 @@ CameraCalibration::optimize( CameraPtr& camera,
     options.num_threads                = 4;
     options.trust_region_strategy_type = ceres::DOGLEG;
     options.logging_type               = ceres::SILENT;
-
     if ( m_verbose )
     {
         options.minimizer_progress_to_stdout = true;
@@ -676,12 +709,7 @@ CameraCalibration::optimize( CameraPtr& camera,
     ceres::Solver::Summary summary;
     ceres::Solve( options, &problem, &summary );
 
-    if ( m_verbose )
-    {
-        //        std::cout << summary.FullReport( ) << std::endl;
-    }
-
-    camera->readParameters( intrinsicCameraParams );
+    std::cout << summary.FullReport( ) << std::endl;
 
     for ( size_t i = 0; i < rvecs.size( ); ++i )
     {
@@ -699,7 +727,7 @@ CameraCalibration::optimize( CameraPtr& camera,
 
 template< typename T >
 void
-CameraCalibration::readData( std::ifstream& ifs, T& data ) const
+CameraCalibrationTest::readData( std::ifstream& ifs, T& data ) const
 {
     char* buffer = new char[sizeof( T )];
 
@@ -712,7 +740,7 @@ CameraCalibration::readData( std::ifstream& ifs, T& data ) const
 
 template< typename T >
 void
-CameraCalibration::writeData( std::ofstream& ofs, T data ) const
+CameraCalibrationTest::writeData( std::ofstream& ofs, T data ) const
 {
     char* pData = reinterpret_cast< char* >( &data );
 

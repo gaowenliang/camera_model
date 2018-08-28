@@ -396,8 +396,8 @@ PolyFisheyeCamera::spaceToPlane( const T* const params,
     T k6 = params[9];
     T k7 = params[10];
 
-    //    T p1 = params[11];
-    //    T p2 = params[12];
+    T p1 = params[11];
+    T p2 = params[12];
 
     T len = sqrt( P_c[0] * P_c[0] + P_c[1] * P_c[1] + P_c[2] * P_c[2] );
     P_c[0] /= len;
@@ -407,19 +407,15 @@ PolyFisheyeCamera::spaceToPlane( const T* const params,
     T theta = acos( P_c[2] );
     T phi   = atan2( P_c[1], P_c[0] );
 
-    T u     = P_c[0] / P_c[2];
-    T v     = P_c[1] / P_c[2];
     T r_sqr = r( k2, k3, k4, k5, k6, k7, theta );
+    T r_x   = P_c[0] / P_c[2];
+    T r_y   = P_c[1] / P_c[2];
 
-    // Eigen::Matrix< T, 2, 1 > du
-    //= Eigen::Matrix< T, 2, 1 >( T( 2.0 ) * p1 * u * v + p2 * ( r_sqr + T( 2.0 ) * u * u ),
-    //                            p1 * ( r_sqr + T( 2.0 ) * v * v ) + T( 2.0 ) * p2 * u * v
-    //                            );
+    Eigen::Matrix< T, 2, 1 > du
+    = Eigen::Matrix< T, 2, 1 >( T( 2.0 ) * p1 * r_x * r_y + p2 * ( r_sqr + T( 2.0 ) * r_x * r_x ),
+                                p1 * ( r_sqr + T( 2.0 ) * r_y * r_y ) + T( 2.0 ) * p2 * r_x * r_y );
 
-    Eigen::Matrix< T, 2, 1 > p_u = r_sqr * Eigen::Matrix< T, 2, 1 >( cos( phi ), sin( phi ) ) /*+ du*/;
-
-    //    T p_u_0 = r_sqr * cos( phi ) + du( 0 );
-    //    T p_u_1 = r_sqr * sin( phi ) + du( 1 );
+    Eigen::Matrix< T, 2, 1 > p_u = r_sqr * Eigen::Matrix< T, 2, 1 >( cos( phi ), sin( phi ) ) + du;
 
     p( 0 ) = A11 * p_u( 0 ) + A12 * p_u( 1 ) + u0;
     p( 1 ) = A22 * p_u( 1 ) + v0;

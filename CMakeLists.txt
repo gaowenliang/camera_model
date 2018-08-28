@@ -39,54 +39,59 @@ include_directories(
 
 include_directories("include")
 
+set(CAMERA_MODEL_FILES
+    ${PROJECT_SOURCE_DIR}/src/camera_models/Camera.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/CostFunctionFactory.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/CameraFactory.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/PinholeCamera.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/PinholeFullCamera.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/CataCamera.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/EquidistantCamera.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/ScaramuzzaCamera.cc
+    ${PROJECT_SOURCE_DIR}/src/camera_models/PolyFisheyeCamera.cpp
+    ${PROJECT_SOURCE_DIR}/src/camera_models/SplineCamera.cpp
+    ${PROJECT_SOURCE_DIR}/src/camera_models/FovCamera.cpp
+    ${PROJECT_SOURCE_DIR}/src/sparse_graph/Transform.cc
+    ${PROJECT_SOURCE_DIR}/src/gpl/gpl.cc
+    ${PROJECT_SOURCE_DIR}/src/code_utils/math_utils/Polynomial.cpp
+    ${PROJECT_SOURCE_DIR}/src/code_utils/cv_utils.cc
+    ${PROJECT_SOURCE_DIR}/src/gpl/EigenQuaternionParameterization.cc
+    )
 
 add_executable(Calibration 
     src/intrinsic_calib.cc
     src/chessboard/Chessboard.cc
     src/calib/CameraCalibration.cc
-    src/camera_models/Camera.cc
-    src/camera_models/CameraFactory.cc
-    src/camera_models/CostFunctionFactory.cc
-    src/camera_models/PinholeCamera.cc
-    src/camera_models/CataCamera.cc
-    src/camera_models/EquidistantCamera.cc
-    src/camera_models/ScaramuzzaCamera.cc
-    src/camera_models/PolyFisheyeCamera.cpp
-    src/camera_models/SplineCamera.cpp
-    src/camera_models/FovCamera.cpp
-    src/sparse_graph/Transform.cc
-    src/gpl/gpl.cc
-    src/code_utils/math_utils/Polynomial.cpp
-    src/code_utils/cv_utils.cc
-    src/gpl/EigenQuaternionParameterization.cc
+    ${CAMERA_MODEL_FILES}
     )
 
+#add_executable(Test
+#    src/test_calib.cc
+#    src/chessboard/Chessboard.cc
+#    src/calib/CameraCalibrationTest.cc
+#    ${CAMERA_MODEL_FILES}
+#    )
 
 add_library(camera_model STATIC
     src/chessboard/Chessboard.cc
     src/calib/CameraCalibration.cc
-    src/camera_models/Camera.cc
-    src/camera_models/CameraFactory.cc
-    src/camera_models/CostFunctionFactory.cc
-    src/camera_models/PinholeCamera.cc
-    src/camera_models/CataCamera.cc
-    src/camera_models/EquidistantCamera.cc
-    src/camera_models/ScaramuzzaCamera.cc
-    src/camera_models/PolyFisheyeCamera.cpp
-    src/camera_models/SplineCamera.cpp
-    src/camera_models/FovCamera.cpp
-    src/sparse_graph/Transform.cc
-    src/gpl/gpl.cc
-    src/code_utils/math_utils/Polynomial.cpp
-    src/gpl/EigenQuaternionParameterization.cc)
+    ${CAMERA_MODEL_FILES}
+    )
 
 target_link_libraries(Calibration
     ${Boost_LIBRARIES}
     ${OpenCV_LIBS}
     ${CERES_LIBRARIES}
-     dw
-    )
+     dw    )
+# target_link_libraries(Test
+#     ${Boost_LIBRARIES}
+#     ${OpenCV_LIBS}
+#     ${CERES_LIBRARIES}
+#      dw    )
 target_link_libraries(camera_model
     ${Boost_LIBRARIES}
     ${OpenCV_LIBS}
     ${CERES_LIBRARIES} )
+
+
+

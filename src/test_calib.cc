@@ -15,7 +15,7 @@ backward::SignalHandling sh;
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <camera_model/calib/CameraCalibration.h>
+#include <camera_model/calib/CameraCalibrationTest.h>
 #include <camera_model/chessboard/Chessboard.h>
 #include <camera_model/gpl/gpl.h>
 
@@ -29,8 +29,7 @@ main( int argc, char** argv )
     cv::Size boardSize;
     float squareSize;
     std::string inputDir;
-    std::string cameraModel;
-    std::string cameraName;
+    std::string cameraFile;
     std::string prefix;
     std::string fileExtension;
     bool useOpenCV;
@@ -58,8 +57,7 @@ main( int argc, char** argv )
         ( "input,i", value< std::string >( &inputDir )->default_value( "calibrationdata" ), "Input directory containing chessboard images" )
         ( "prefix,p", value< std::string >( &prefix )->default_value( "" ), "Prefix of images" )
         ( "file-extension,e", value< std::string >( &fileExtension )->default_value( ".png" ),"File extension of images" )
-        ( "camera-model", value< std::string >( &cameraModel )->default_value( "mei" ),"Camera model: kannala-brandt | fov | scaramuzza | mei | pinhole | myfisheye" )
-        ( "camera-name", value< std::string >( &cameraName )->default_value( "camera" ), "Name of camera" )
+        ( "camera-file", value< std::string >( &cameraFile )->default_value( "camera" ), "File of camera" )
         ( "opencv", value< bool >( &useOpenCV )->default_value( true ), "Use OpenCV to detect corners" )
         ( "view-results", value< bool >( &viewResults )->default_value( true ), "View results" )
         ( "verbose,v", value< bool >( &verbose )->default_value( true ), "Verbose output" )
@@ -93,73 +91,6 @@ main( int argc, char** argv )
     {
         std::cerr << "# ERROR: Cannot find input directory " << inputDir << "." << std::endl;
         return 1;
-    }
-
-    camera_model::Camera::ModelType modelType;
-    if ( boost::iequals( cameraModel, "kannala-brandt" ) )
-    {
-        modelType = camera_model::Camera::KANNALA_BRANDT;
-    }
-    else if ( boost::iequals( cameraModel, "mei" ) )
-    {
-        modelType = camera_model::Camera::MEI;
-    }
-    else if ( boost::iequals( cameraModel, "pinhole" ) )
-    {
-        modelType = camera_model::Camera::PINHOLE;
-    }
-    else if ( boost::iequals( cameraModel, "pinhole2" ) )
-    {
-        modelType = camera_model::Camera::PINHOLE_FULL;
-    }
-    else if ( boost::iequals( cameraModel, "scaramuzza" ) )
-    {
-        modelType = camera_model::Camera::SCARAMUZZA;
-    }
-    else if ( boost::iequals( cameraModel, "myfisheye" ) )
-    {
-        modelType = camera_model::Camera::POLYFISHEYE;
-    }
-    else if ( boost::iequals( cameraModel, "spline" ) )
-    {
-        modelType = camera_model::Camera::SPLINE;
-    }
-    else if ( boost::iequals( cameraModel, "fov" ) )
-    {
-        modelType = camera_model::Camera::FOV;
-    }
-    else
-    {
-        std::cerr << "# ERROR: Unknown camera model: " << cameraModel << std::endl;
-        return 1;
-    }
-
-    switch ( modelType )
-    {
-        case camera_model::Camera::KANNALA_BRANDT:
-            std::cout << "# INFO: Camera model: Kannala-Brandt" << std::endl;
-            break;
-        case camera_model::Camera::MEI:
-            std::cout << "# INFO: Camera model: Mei" << std::endl;
-            break;
-        case camera_model::Camera::PINHOLE:
-            std::cout << "# INFO: Camera model: Pinhole" << std::endl;
-            break;
-        case camera_model::Camera::PINHOLE_FULL:
-            std::cout << "# INFO: Camera model: Full Pinhole Model" << std::endl;
-            break;
-        case camera_model::Camera::SCARAMUZZA:
-            std::cout << "# INFO: Camera model: Scaramuzza-Omnidirect" << std::endl;
-            break;
-        case camera_model::Camera::SPLINE:
-            std::cout << "# INFO: Camera model: spline camera model" << std::endl;
-            break;
-        case camera_model::Camera::FOV:
-            std::cout << "# INFO: Camera model: FOV camera model" << std::endl;
-            break;
-        case camera_model::Camera::POLYFISHEYE:
-            std::cout << "# INFO: Camera model: GaoWenliang's polynomial fisheye model" << std::endl;
-            break;
     }
 
     // look for images in input directory
@@ -229,8 +160,8 @@ main( int argc, char** argv )
     double startTime_0 = camera_model::timeInSeconds( );
 
     // TODO need to change mode type
-    camera_model::CameraCalibration calibration( modelType, cameraName, frameSize, boardSize, squareSize );
-    calibration.setVerbose( verbose );
+    camera_model::CameraCalibrationTest calibTest( cameraFile, boardSize, squareSize );
+    calibTest.setVerbose( verbose );
 
     std::vector< bool > chessboardFound( imageFilenames.size( ), false );
 
@@ -250,8 +181,8 @@ main( int argc, char** argv )
             std::cerr << "# INFO: Detected chessboard in image " << image_index + 1 << ", "
                       << imageFilenames.at( image_index ) << std::endl;
 
-            calibration.addChessboardData( chessboard.getCorners( ) );
-            calibration.addImage( image, image_name );
+            calibTest.addChessboardData( chessboard.getCorners( ) );
+            calibTest.addImage( image, image_name );
 
             cv::Mat sketch;
             chessboard.getSketch( ).copyTo( sketch );
@@ -265,36 +196,25 @@ main( int argc, char** argv )
         chessboardFound.at( image_index ) = chessboard.cornersFound( );
     }
 
-    if ( calibration.sampleCount( ) < 1 )
+    if ( calibTest.sampleCount( ) < 1 )
     {
         std::cerr << "# ERROR: Insufficient number of detected chessboards." << std::endl;
         return 1;
     }
 
-    std::cerr << "# INFO: Calibrating..." << std::endl;
-
     double startTime = camera_model::timeInSeconds( );
 
-    std::cout << " Calibrate start." << std::endl;
-    calibration.calibrate( );
+    calibTest.calibrate( );
 
-    std::cout << " Calibrate done." << std::endl;
-
-    calibration.writeParams( cameraName + "_camera_calib.yaml" );
-    //    calibration.writeChessboardData( cameraName + "_chessboard_data.dat" );
-
-    std::cout << "# INFO: Calibration took a total time of " << std::fixed
-              << std::setprecision( 3 ) << camera_model::timeInSeconds( ) - startTime_0
-              << " sec, core calibration cost "
+    std::cout << "# INFO: Test took a total time of " << std::fixed << std::setprecision( 3 )
+              << camera_model::timeInSeconds( ) - startTime_0 << " sec, core Test cost "
               << camera_model::timeInSeconds( ) - startTime << " sec." << std::endl;
-
-    std::cerr << "# INFO: Wrote calibration file to " << cameraName + "_camera_calib.yaml" << std::endl;
 
     if ( viewResults && verbose )
     {
 
         std::cout << "\033[32;40;1m"
-                  << "# INFO: Used image num: " << calibration.m_ImagesShow.size( )
+                  << "# INFO: Used image num: " << calibTest.m_ImagesShow.size( )
                   << "\033[0m" << std::endl;
         std::cout << "details shown in the images,"
                   << "\033[32;40;1m"
@@ -303,31 +223,25 @@ main( int argc, char** argv )
                   << "red points is estimated points. "
                   << "\033[0m" << std::endl;
 
-        cv::Mat pointDistributedImage     = cv::Mat( calibration.m_ImagesShow[0].rows,
-                                                 calibration.m_ImagesShow[0].cols,
-                                                 CV_8UC3,
-                                                 cv::Scalar( 0 ) );
-        cv::Mat pointDistributedImageGood = cv::Mat( calibration.m_ImagesShow[0].rows,
-                                                     calibration.m_ImagesShow[0].cols,
-                                                     CV_8UC3,
-                                                     cv::Scalar( 0 ) );
+        cv::Mat pointDistributedImage
+        = cv::Mat( calibTest.m_ImagesShow[0].rows, calibTest.m_ImagesShow[0].cols, CV_8UC3, cv::Scalar( 0 ) );
+        cv::Mat pointDistributedImageGood
+        = cv::Mat( calibTest.m_ImagesShow[0].rows, calibTest.m_ImagesShow[0].cols, CV_8UC3, cv::Scalar( 0 ) );
 
         // visualize observed and reprojected points
-        calibration.drawResultsInitial( calibration.m_ImagesShow, calibration.m_ImageNames, pointDistributedImage );
-        calibration.drawResultsFiltered( calibration.m_ImagesGoodShow,
-                                         calibration.m_ImageNames,
-                                         pointDistributedImageGood );
+        calibTest.drawResultsInitial( calibTest.m_ImagesShow, calibTest.m_ImageNames, pointDistributedImage );
+        calibTest.drawResultsFiltered( calibTest.m_ImagesGoodShow, calibTest.m_ImageNames, pointDistributedImageGood );
 
         cv::namedWindow( "point Distributed Image", cv::WINDOW_NORMAL );
         cv::imshow( "point Distributed Image", pointDistributedImage );
         cv::namedWindow( "good point Distributed Image", cv::WINDOW_NORMAL );
         cv::imshow( "good point Distributed Image", pointDistributedImageGood );
-        for ( size_t i = 0; i < calibration.m_ImagesShow.size( ); ++i )
+        for ( size_t i = 0; i < calibTest.m_ImagesShow.size( ); ++i )
         {
             cv::namedWindow( "Image", cv::WINDOW_NORMAL );
-            cv::imshow( "Image", calibration.m_ImagesShow.at( i ) );
+            cv::imshow( "Image", calibTest.m_ImagesShow.at( i ) );
             cv::namedWindow( "Image GoodPoints", cv::WINDOW_NORMAL );
-            cv::imshow( "Image GoodPoints", calibration.m_ImagesGoodShow.at( i ) );
+            cv::imshow( "Image GoodPoints", calibTest.m_ImagesGoodShow.at( i ) );
 
             if ( is_save_images )
             {
@@ -335,7 +249,7 @@ main( int argc, char** argv )
                 ss << i;
                 cv::imwrite( result_images_save_folder + "calib_result_" + ss.str( )
                              + ".jpg",
-                             calibration.m_ImagesGoodShow.at( i ) );
+                             calibTest.m_ImagesGoodShow.at( i ) );
             }
             cv::waitKey( 0 );
         }
