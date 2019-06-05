@@ -33,10 +33,12 @@ main( int argc, char** argv )
     std::string cameraName;
     std::string prefix;
     std::string fileExtension;
+
     bool useOpenCV;
     bool viewResults;
     bool verbose;
     bool is_save_images;
+    std::string point_file;
     std::string result_images_save_folder;
 
     float resize_scale = 1.0;
@@ -65,6 +67,7 @@ main( int argc, char** argv )
         ( "verbose,v", value< bool >( &verbose )->default_value( true ), "Verbose output" )
         ( "save_result", value< bool >( &is_save_images )->default_value( true ), "save calibration result chessboard point." )
         ( "result_images_save_folder", value< std::string  >( &result_images_save_folder )->default_value( "calib_images" ), " calibration result images save folder." )
+        ( "point_file", value< std::string  >( &point_file )->default_value( "calib_images" ), " calibration result images save folder." )
         ( "resize-scale", value< float >( &resize_scale )->default_value( 1.0f ), "resize scale" )
         ( "cropper_width", value< int >( &cropper_size.width )->default_value( 0 ), "cropper image width" )
         ( "cropper_height", value< int >( &cropper_size.height )->default_value( 0 ), "cropper image height" )
@@ -318,6 +321,7 @@ main( int argc, char** argv )
                                          calibration.m_ImageNames,
                                          pointDistributedImageGood );
 
+        calibration.save2D( point_file );
         cv::namedWindow( "point Distributed Image", cv::WINDOW_NORMAL );
         cv::imshow( "point Distributed Image", pointDistributedImage );
         cv::namedWindow( "good point Distributed Image", cv::WINDOW_NORMAL );

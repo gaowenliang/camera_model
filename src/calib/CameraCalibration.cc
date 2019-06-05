@@ -340,7 +340,7 @@ CameraCalibration::drawResults( std::vector< cv::Mat >& images,
                         r_show,
                         green,
                         show_unit * 2,
-                        CV_AA,
+                        cv::LINE_AA,//CV_AA,
                         drawShiftBits );
 
             // red points is the estimated points
@@ -349,7 +349,7 @@ CameraCalibration::drawResults( std::vector< cv::Mat >& images,
                         r_show,
                         red,
                         show_unit * 2,
-                        CV_AA,
+                        cv::LINE_AA,//CV_AA,
                         drawShiftBits );
 
             float error = cv::norm( pObs - pEst );
@@ -360,7 +360,7 @@ CameraCalibration::drawResults( std::vector< cv::Mat >& images,
                         r_show,
                         yellow,
                         show_unit * 2,
-                        CV_AA,
+                        cv::LINE_AA,//CV_AA,
                         drawShiftBits );
 
             // Print each error of chessboard point
@@ -717,5 +717,24 @@ CameraCalibration::writeData( std::ofstream& ofs, T data ) const
     char* pData = reinterpret_cast< char* >( &data );
 
     ofs.write( pData, sizeof( T ) );
+}
+
+void
+CameraCalibration::save2D( std::string point_file ) const
+{
+    std::ofstream out_t;
+    out_t.open( point_file, std::ios::trunc );
+    out_t << std::setprecision( 10 );
+
+    for ( size_t i = 0; i < m_imageGoodPointsShow.size( ); ++i )
+    {
+        for ( size_t j = 0; j < m_imageGoodPointsShow.at( i ).size( ); ++j )
+        {
+            cv::Point2f pObs = m_imageGoodPointsShow.at( i ).at( j );
+
+            out_t << pObs.x << " " << pObs.y << '\n';
+        }
+    }
+    out_t.close( );
 }
 }

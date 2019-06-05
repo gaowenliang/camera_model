@@ -41,8 +41,12 @@ class CameraCalibration
     cv::Mat& cameraPoses( void );
     const cv::Mat& cameraPoses( void ) const;
 
-    void drawResultsInitial( std::vector< cv::Mat >& images, std::vector< std::string >& imageNames, cv::Mat& DistributedImage ) const;
-    void drawResultsFiltered( std::vector< cv::Mat >& images, std::vector< std::string >& imageNames, cv::Mat& DistributedImage ) const;
+    void drawResultsInitial( std::vector< cv::Mat >& images,
+                             std::vector< std::string >& imageNames,
+                             cv::Mat& DistributedImage ) const;
+    void drawResultsFiltered( std::vector< cv::Mat >& images,
+                              std::vector< std::string >& imageNames,
+                              cv::Mat& DistributedImage ) const;
     void drawResults( std::vector< cv::Mat >& images,
                       std::vector< std::string >& imageNames,
                       const cv::Mat& DistributedImage,
@@ -50,7 +54,7 @@ class CameraCalibration
                       const std::vector< cv::Mat > cameraPoseTs,
                       const std::vector< std::vector< cv::Point2f > > imagePoints,
                       const std::vector< std::vector< cv::Point3f > > scenePoints ) const;
-
+    void save2D( std::string point_file ) const;
     void writeParams( const std::string& filename ) const;
 
     bool writeChessboardData( const std::string& filename ) const;

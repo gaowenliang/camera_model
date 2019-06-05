@@ -415,7 +415,7 @@ PolyFisheyeCamera::spaceToPlane( const T* const params,
     = Eigen::Matrix< T, 2, 1 >( T( 2.0 ) * p1 * r_x * r_y + p2 * ( r_sqr + T( 2.0 ) * r_x * r_x ),
                                 p1 * ( r_sqr + T( 2.0 ) * r_y * r_y ) + T( 2.0 ) * p2 * r_x * r_y );
 
-    Eigen::Matrix< T, 2, 1 > p_u = r_sqr * Eigen::Matrix< T, 2, 1 >( cos( phi ), sin( phi ) ) + du;
+    Eigen::Matrix< T, 2, 1 > p_u = r_sqr * Eigen::Matrix< T, 2, 1 >( cos( phi ), sin( phi ) ); // + du;
 
     p( 0 ) = A11 * p_u( 0 ) + A12 * p_u( 1 ) + u0;
     p( 1 ) = A22 * p_u( 1 ) + v0;
