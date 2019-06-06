@@ -39,6 +39,9 @@ include_directories(
 
 include_directories("include")
 
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/apriltag AprilTagSrc)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/apriltag_frontend AprilTagSrc2)
+
 set(CAMERA_MODEL_FILES
     ${PROJECT_SOURCE_DIR}/src/camera_models/Camera.cc
     ${PROJECT_SOURCE_DIR}/src/camera_models/CostFunctionFactory.cc
@@ -56,6 +59,8 @@ set(CAMERA_MODEL_FILES
     ${PROJECT_SOURCE_DIR}/src/code_utils/math_utils/Polynomial.cpp
     ${PROJECT_SOURCE_DIR}/src/code_utils/cv_utils.cc
     ${PROJECT_SOURCE_DIR}/src/gpl/EigenQuaternionParameterization.cc
+    ${AprilTagSrc}
+#    ${AprilTagSrc2}
     )
 
 add_executable(Calibration 
