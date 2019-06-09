@@ -15,8 +15,8 @@ backward::SignalHandling sh;
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <camera_model/apriltag_frontend/GridCalibrationTargetAprilgrid.hpp>
 #include <camera_model/calib/CameraCalibration.h>
-#include <camera_model/chessboard/Chessboard.h>
 #include <camera_model/gpl/gpl.h>
 
 #include <camera_model/code_utils/cv_utils.h>
@@ -245,19 +245,34 @@ main( int argc, char** argv )
 
         cv::Mat image = preprocess->do_preprocess( cv::imread( image_name, -1 ) );
 
-        camera_model::Chessboard chessboard( boardSize, image );
+        aslam::cameras::GridCalibrationTargetAprilgrid aprilgrid( boardSize.height,
+                                                                  boardSize.width,
+                                                                  0.075,
+                                                                  0.2 );
 
-        chessboard.findCorners( useOpenCV );
-        if ( chessboard.cornersFound( ) )
+        std::vector< cv::Point2f > points2ds;
+        std::vector< cv::Point3f > points3ds;
+        std::vector< bool > outCornerObserved;
+        bool succ = aprilgrid.computeObservation( image, points2ds, outCornerObserved );
+        points3ds = aprilgrid.points3d( );
+        if ( succ )
         {
             std::cerr << "# INFO: Detected chessboard in image " << image_index + 1 << ", "
                       << imageFilenames.at( image_index ) << std::endl;
 
-            calibration.addChessboardData( chessboard.getCorners( ) );
-            calibration.addImage( image, image_name );
+            std::vector< cv::Point2f > points2_fin;
+            std::vector< cv::Point3f > points3_fin;
+            for ( int idx_p = 0; idx_p < outCornerObserved.size( ); idx_p++ )
+            {
+                if ( outCornerObserved.at( idx_p ) )
+                {
+                    points2_fin.push_back( points2ds.at( idx_p ) );
+                    points3_fin.push_back( points3ds.at( idx_p ) );
+                }
+            }
 
-            cv::Mat sketch;
-            chessboard.getSketch( ).copyTo( sketch );
+            calibration.addChessboardData( points2_fin, points3_fin );
+            calibration.addImage( image, image_name );
         }
         else
         {
@@ -265,7 +280,7 @@ main( int argc, char** argv )
                       << "# INFO: Did not detect chessboard in image: "
                       << imageFilenames.at( image_index ) << "\033[0m" << std::endl;
         }
-        chessboardFound.at( image_index ) = chessboard.cornersFound( );
+        chessboardFound.at( image_index ) = succ;
     }
 
     if ( calibration.sampleCount( ) < 1 )

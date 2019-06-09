@@ -114,8 +114,8 @@ class PinholeCamera : public Camera
         double cy    = params.imageHeight( ) / 2.0;
         params.cx( ) = cx;
         params.cy( ) = cy;
-        params.fx( ) = 1200;
-        params.fy( ) = 1200;
+        params.fx( ) = 300;
+        params.fy( ) = 300;
 
         setParameters( params );
     }

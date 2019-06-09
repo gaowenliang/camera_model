@@ -256,8 +256,8 @@ class PolyFisheyeCamera : public Camera
         params.u0( ) = u0;
         params.v0( ) = v0;
 
-        params.A11( ) = 1257.07;
-        params.A22( ) = 1257.12;
+        params.A11( ) = 300;
+        params.A22( ) = 300;
 
         setParameters( params );
     }
