@@ -23,6 +23,8 @@ class CameraCalibration
     void clear( void );
 
     void addChessboardData( const std::vector< cv::Point2f >& corners );
+    void addChessboardData( const std::vector< cv::Point2f >& corners,
+                            const std::vector< cv::Point3f >& scene_pts );
     void addImage( const cv::Mat image, const std::string name );
 
     bool calibrate( void );

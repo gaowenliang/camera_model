@@ -73,6 +73,14 @@ CameraCalibration::addChessboardData( const std::vector< cv::Point2f >& corners 
     m_scenePoints.push_back( scenePointsInView );
 }
 
+void
+CameraCalibration::addChessboardData( const std::vector< cv::Point2f >& corners,
+                                      const std::vector< cv::Point3f >& scene_pts )
+{
+    m_imagePoints.push_back( corners );
+    m_scenePoints.push_back( scene_pts );
+}
+
 bool
 CameraCalibration::calibrate( void )
 {
@@ -86,6 +94,7 @@ CameraCalibration::calibrate( void )
     tvecs.assign( m_scenePoints.size( ), cv::Mat( ) );
 
     // STEP 1: Estimate intrinsics
+    // m_camera->setInitIntrinsics( m_scenePoints, m_imagePoints );
     m_camera->estimateIntrinsics( m_boardSize, m_scenePoints, m_imagePoints );
     std::cout << "[" << m_camera->cameraName( ) << "] "
               << "# INFO: "
@@ -340,7 +349,7 @@ CameraCalibration::drawResults( std::vector< cv::Mat >& images,
                         r_show,
                         green,
                         show_unit * 2,
-                        cv::LINE_AA,//CV_AA,
+                        cv::LINE_AA, // CV_AA,
                         drawShiftBits );
 
             // red points is the estimated points
@@ -349,7 +358,7 @@ CameraCalibration::drawResults( std::vector< cv::Mat >& images,
                         r_show,
                         red,
                         show_unit * 2,
-                        cv::LINE_AA,//CV_AA,
+                        cv::LINE_AA, // CV_AA,
                         drawShiftBits );
 
             float error = cv::norm( pObs - pEst );
@@ -360,7 +369,7 @@ CameraCalibration::drawResults( std::vector< cv::Mat >& images,
                         r_show,
                         yellow,
                         show_unit * 2,
-                        cv::LINE_AA,//CV_AA,
+                        cv::LINE_AA, // CV_AA,
                         drawShiftBits );
 
             // Print each error of chessboard point

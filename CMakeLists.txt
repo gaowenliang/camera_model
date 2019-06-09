@@ -60,11 +60,18 @@ set(CAMERA_MODEL_FILES
     ${PROJECT_SOURCE_DIR}/src/code_utils/cv_utils.cc
     ${PROJECT_SOURCE_DIR}/src/gpl/EigenQuaternionParameterization.cc
     ${AprilTagSrc}
-#    ${AprilTagSrc2}
+    ${AprilTagSrc2}
     )
 
 add_executable(Calibration 
     src/intrinsic_calib.cc
+    src/chessboard/Chessboard.cc
+    src/calib/CameraCalibration.cc
+    ${CAMERA_MODEL_FILES}
+    )
+
+add_executable(april_calib
+    src/april_calib.cc
     src/chessboard/Chessboard.cc
     src/calib/CameraCalibration.cc
     ${CAMERA_MODEL_FILES}
@@ -87,7 +94,12 @@ target_link_libraries(Calibration
     ${Boost_LIBRARIES}
     ${OpenCV_LIBS}
     ${CERES_LIBRARIES}
-     dw    )
+    dw    )
+target_link_libraries(april_calib
+    ${Boost_LIBRARIES}
+    ${OpenCV_LIBS}
+    ${CERES_LIBRARIES}
+    dw    )
 target_link_libraries(Test
     ${Boost_LIBRARIES}
     ${OpenCV_LIBS}
